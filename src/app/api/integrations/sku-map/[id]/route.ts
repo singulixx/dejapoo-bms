@@ -6,7 +6,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   const auth = requireAdmin(req);
   if (!auth.ok) return auth.res;
 
-  const id = params.id;
+  const { id } = await params;
   await prisma.channelSkuMap.delete({ where: { id } }).catch(() => null);
   return NextResponse.json({ ok: true });
 }

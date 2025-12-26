@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
-import { mkdir, writeFile } from "fs/promises";
 import path from "path";
+import { put } from "@vercel/blob";
 
 export const runtime = "nodejs";
 
@@ -16,31 +16,30 @@ export async function POST(req: Request) {
   if (!auth.ok) return auth.res;
 
   const form = await req.formData().catch(() => null);
-  if (!form) return NextResponse.json({ message: "Invalid form" }, { status: 400 });
+  if (!form) return NextResponse.json({ message: "Invalid form data" }, { status: 400 });
 
   const file = form.get("file");
-  if (!file || typeof file === "string") {
-    return NextResponse.json({ message: "File is required" }, { status: 400 });
+  if (!(file instanceof File)) {
+    return NextResponse.json({ message: "File tidak ditemukan" }, { status: 400 });
   }
 
-  // @ts-expect-error - File API tersedia di runtime Next
-  const filename = (file as any).name as string | undefined;
-  const ext = safeExt(filename || "image.png");
-  const buf = Buffer.from(await (file as File).arrayBuffer());
-
-  // limit 5MB
-  if (buf.byteLength > 5 * 1024 * 1024) {
+  if (file.size > 5 * 1024 * 1024) {
     return NextResponse.json({ message: "File terlalu besar (maks 5MB)" }, { status: 400 });
   }
 
-  const uploadsDir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(uploadsDir, { recursive: true });
-
+  const ext = safeExt(file.name);
   const stamp = Date.now();
   const rand = Math.random().toString(36).slice(2, 8);
-  const outName = `design-${stamp}-${rand}${ext}`;
-  const outPath = path.join(uploadsDir, outName);
-  await writeFile(outPath, buf);
+  const key = `uploads/design-${stamp}-${rand}${ext}`;
 
-  return NextResponse.json({ url: `/uploads/${outName}` }, { status: 201 });
+  const buf = Buffer.from(await file.arrayBuffer());
+
+  // Requires env var: BLOB_READ_WRITE_TOKEN on Vercel
+  const blob = await put(key, buf, {
+    access: "public",
+    contentType: file.type || "application/octet-stream",
+    addRandomSuffix: false,
+  });
+
+  return NextResponse.json({ url: blob.url }, { status: 201 });
 }
