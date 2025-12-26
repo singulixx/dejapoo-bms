@@ -23,7 +23,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "File is required" }, { status: 400 });
   }
 
-  // @ts-expect-error - File API tersedia di runtime Next
   const filename = (file as any).name as string | undefined;
   const ext = safeExt(filename || "image.png");
   const buf = Buffer.from(await (file as File).arrayBuffer());
