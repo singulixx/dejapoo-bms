@@ -3,9 +3,12 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
+const SizeEnum = z.enum(["S", "M", "L", "XL", "XXL"]);
+
 const CreateVariant = z.object({
   productId: z.string().min(1),
-  size: z.string().min(1),
+  // Prisma schema expects enum values; using z.enum keeps types aligned.
+  size: SizeEnum,
   sku: z.string().min(1),
   price: z.number().int().positive(),
   color: z.string().optional().nullable(),
@@ -54,9 +57,13 @@ export async function GET(req: Request) {
   if (!includeInactive) where.isActive = true;
   if (productId) where.productId = productId;
   if (q) {
+    const allowedSizes = ["S", "M", "L", "XL", "XXL"] as const;
+    const isSize = allowedSizes.includes(q as any);
+
     where.OR = [
       { sku: { contains: q } },
-      { size: { contains: q } },
+      // `size` is an enum in Prisma, so use equality when the query matches.
+      ...(isSize ? [{ size: q as (typeof allowedSizes)[number] }] : []),
       { color: { contains: q } },
       { product: { name: { contains: q } } },
     ];
