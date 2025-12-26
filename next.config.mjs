@@ -1,5 +1,10 @@
 /** @type {import("next").NextConfig} */
 const nextConfig = {
+  // Workaround for occasional Vercel tracing failures (ENOENT on
+  // "*_client-reference-manifest.js" under .next/server/app/...).
+  // Disabling output file tracing prevents the deployment build from
+  // aborting during the trace step.
+  outputFileTracing: false,
   images: {
     remotePatterns: [
       {
