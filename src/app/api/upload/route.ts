@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
-import { mkdir, writeFile } from "fs/promises";
+import { put } from "@vercel/blob";
 import path from "path";
 
 export const runtime = "nodejs";
@@ -33,14 +33,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "File terlalu besar (maks 5MB)" }, { status: 400 });
   }
 
-  const uploadsDir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(uploadsDir, { recursive: true });
-
+  // Vercel Serverless tidak mendukung penyimpanan file persisten di filesystem proyek
+  // (public/ akan read-only saat runtime). Gunakan Vercel Blob sebagai storage.
   const stamp = Date.now();
   const rand = Math.random().toString(36).slice(2, 8);
   const outName = `design-${stamp}-${rand}${ext}`;
-  const outPath = path.join(uploadsDir, outName);
-  await writeFile(outPath, buf);
 
-  return NextResponse.json({ url: `/uploads/${outName}` }, { status: 201 });
+  const blob = await put(`uploads/${outName}`, buf, {
+    access: "public",
+    contentType: (file as File).type || "image/png",
+  });
+
+  return NextResponse.json({ url: blob.url }, { status: 201 });
 }

@@ -46,10 +46,21 @@ And voila! You're now ready to start developing. **Happy coding**!
 
 ## Environment Variables
 
-- `DATABASE_URL` (MySQL)
+- `DATABASE_URL` (PostgreSQL)
+- `BLOB_READ_WRITE_TOKEN` (Vercel Blob, untuk fitur upload gambar)
 - `ADMIN_USERNAME` / `ADMIN_PASSWORD` (bootstrap admin)
 - `WEBHOOK_SECRET_SHOPEE` (header `x-webhook-secret`)
 - `WEBHOOK_SECRET_TIKTOK` (header `x-webhook-secret`)
+
+## Prisma migrations (Postgres)
+
+Repo ini sudah disiapkan untuk Postgres. Kalau kamu sebelumnya pakai MySQL, jangan pakai migration SQL lama.
+Jalankan ulang migration untuk Postgres dari awal:
+
+```bash
+npm install
+npx prisma migrate dev --name init
+```
 
 ## Webhook Endpoints (for Vercel)
 
