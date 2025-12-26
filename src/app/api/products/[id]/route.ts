@@ -12,26 +12,29 @@ const UpdateProduct = z.object({
   isActive: z.boolean().optional(),
 });
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = requireAdmin(req);
   if (!auth.ok) return auth.res;
+
+  const { id } = await params;
   const parsed = UpdateProduct.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
   const updated = await prisma.product.update({
-    where: { id: params.id },
+    where: { id: id },
     data: parsed.data,
   });
 
   return NextResponse.json(updated);
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = requireAdmin(_req);
   if (!auth.ok) return auth.res;
+  const { id } = await params;
 
   const updated = await prisma.product.update({
-    where: { id: params.id },
+    where: { id: id },
     data: { deletedAt: new Date() },
   });
   return NextResponse.json({ ok: true, id: updated.id });
