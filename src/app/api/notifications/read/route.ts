@@ -13,15 +13,18 @@ export async function POST(req: Request) {
   if (!auth.ok) return auth.res;
 
   const parsed = BodySchema.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ message: "Invalid input" }, { status: 400 });
+  if (!parsed.success) {
+    return NextResponse.json({ message: "Invalid input" }, { status: 400 });
+  }
 
   const userId = auth.user.sub;
   const role = auth.user.role;
-
   const now = new Date();
+
+  // ✅ Jangan pakai "as const" supaya OR tidak jadi readonly
   const whereAccess = {
     OR: [{ userId }, { role }, { userId: null, role: null }],
-  } as const;
+  };
 
   if (parsed.data.all) {
     await prisma.notification.updateMany({
@@ -30,7 +33,7 @@ export async function POST(req: Request) {
     });
   } else if (parsed.data.ids?.length) {
     await prisma.notification.updateMany({
-      where: { ...whereAccess, id: { in: parsed.data.ids } },
+      where: { ...whereAccess, id: { in: parsed.data.ids }, isRead: false },
       data: { isRead: true, readAt: now },
     });
   } else {
@@ -38,7 +41,7 @@ export async function POST(req: Request) {
   }
 
   const unreadCount = await prisma.notification.count({
-    where: { isRead: false, ...whereAccess },
+    where: { ...whereAccess, isRead: false },
   });
 
   return NextResponse.json({ ok: true, unreadCount });
