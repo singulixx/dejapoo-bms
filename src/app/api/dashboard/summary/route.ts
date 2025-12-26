@@ -45,18 +45,20 @@ export async function GET(req: Request) {
   ] = await Promise.all([
       prisma.product.count({ where: { deletedAt: null } }),
       prisma.productVariant.count({ where: { deletedAt: null } }),
-      prisma.stock.groupBy({ by: ["outletId"], _sum: { qty: true } }),
+      // Prisma `groupBy` expects `by` to be a literal tuple. Without `as const`, TS infers
+      // `string[]` and Next.js build fails with an overload/union "not callable" error.
+      prisma.stock.groupBy({ by: ["outletId"] as const, _sum: { qty: true } }),
       prisma.outlet.findMany({ where: { deletedAt: null, isActive: true }, select: { id: true, name: true, type: true } }),
       prisma.order.aggregate({ where: { createdAt: { gte: dayStart } }, _sum: { totalAmount: true }, _count: { _all: true } }),
       prisma.order.aggregate({ where: { createdAt: { gte: monthStart } }, _sum: { totalAmount: true }, _count: { _all: true } }),
       prisma.order.groupBy({
-        by: ["channel"],
+        by: ["channel"] as const,
         where: { createdAt: { gte: dayStart } },
         _sum: { totalAmount: true },
         _count: { _all: true },
       }),
       prisma.orderItem.groupBy({
-        by: ["productId"],
+        by: ["productId"] as const,
         _sum: { qty: true, subtotal: true },
         orderBy: { _sum: { subtotal: "desc" } },
         take: 10,
