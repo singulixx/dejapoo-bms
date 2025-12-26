@@ -7,7 +7,8 @@ import { requireAdmin } from "@/lib/auth";
 const CreateSchema = z.object({
   channel: z.enum(["SHOPEE", "TIKTOK"]),
   name: z.string().optional().nullable(),
-  credentials: z.record(z.any()),
+  // Zod v4: record() requires (keyType, valueType)
+  credentials: z.record(z.string(), z.unknown()),
 });
 
 function encryptJson(data: any) {
