@@ -22,21 +22,21 @@ function getReqMeta(req: Request) {
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     req.headers.get("x-real-ip") ||
-    null;
+    undefined;
 
   // Always prefer the real request URL path. (x-pathname can be spoofed or missing)
-  let path: string | null = null;
+  let path: string | undefined = undefined;
   try {
     path = new URL(req.url).pathname;
   } catch {
-    path = null;
+    path = undefined;
   }
 
   return {
     method: req.method,
     path: path,
     ip: ip,
-    userAgent: req.headers.get("user-agent") || null,
+    userAgent: req.headers.get("user-agent") || undefined,
   };
 }
 
