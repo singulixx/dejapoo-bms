@@ -3,6 +3,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
+// ExcelJS needs Node.js runtime (not Edge)
+export const runtime = "nodejs";
+
 export async function GET(req: Request) {
   const auth = requireAdmin(req);
   if (!auth.ok) return auth.res;
@@ -33,8 +36,10 @@ export async function GET(req: Request) {
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet("Stock");
     ws.addRow(["Outlet","Product","Variant","SKU","Size","Color","Qty","MinQty"]); 
-    for (const r of rows) {
-      ws.addRow([r.outletName, r.productName, r.variantName, r.sku, r.size, r.color || "", r.qty, r.minQty]);
+    // Use the normalized `data` rows (already joined + filtered)
+    for (const r of data) {
+      const variantLabel = [r.size, r.color].filter(Boolean).join("/");
+      ws.addRow([r.outlet, r.product, variantLabel, r.sku, r.size, r.color || "", r.qty, r.minQty]);
     }
     const buf = await wb.xlsx.writeBuffer();
     return new NextResponse(Buffer.from(buf), {
