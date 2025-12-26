@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+// Next.js 15: `params` is a Promise in dynamic route handlers.
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const auth = requireAdmin(req);
   if (!auth.ok) return auth.res;
 
