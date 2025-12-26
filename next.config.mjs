@@ -22,12 +22,6 @@ const nextConfig = {
         hostname: "pub-b7fd9c30cdbf439183b75041f5f71b92.r2.dev",
         port: ""
       }
-      ,
-      {
-        protocol: "https",
-        hostname: "blob.vercel-storage.com",
-        port: ""
-      }
     ]
   }
 };

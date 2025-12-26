@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
-import { put } from "@vercel/blob";
+import { mkdir, writeFile } from "fs/promises";
 import path from "path";
-import crypto from "crypto";
 
 export const runtime = "nodejs";
 
@@ -14,23 +13,34 @@ function safeExt(filename: string) {
 
 export async function POST(req: Request) {
   const auth = requireAdmin(req);
-  if (!auth.ok) return auth.response;
+  if (!auth.ok) return auth.res;
 
-  const form = await req.formData();
+  const form = await req.formData().catch(() => null);
+  if (!form) return NextResponse.json({ message: "Invalid form" }, { status: 400 });
+
   const file = form.get("file");
-
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: "No file provided" }, { status: 400 });
+  if (!file || typeof file === "string") {
+    return NextResponse.json({ message: "File is required" }, { status: 400 });
   }
 
-  const ext = safeExt(file.name);
-  const key = `uploads/${Date.now()}-${crypto.randomUUID()}${ext}`;
+  // @ts-expect-error - File API tersedia di runtime Next
+  const filename = (file as any).name as string | undefined;
+  const ext = safeExt(filename || "image.png");
+  const buf = Buffer.from(await (file as File).arrayBuffer());
 
-  const blob = await put(key, file, {
-    access: "public",
-    contentType: file.type || "image/png",
-    addRandomSuffix: false
-  });
+  // limit 5MB
+  if (buf.byteLength > 5 * 1024 * 1024) {
+    return NextResponse.json({ message: "File terlalu besar (maks 5MB)" }, { status: 400 });
+  }
 
-  return NextResponse.json({ url: blob.url, pathname: blob.pathname });
+  const uploadsDir = path.join(process.cwd(), "public", "uploads");
+  await mkdir(uploadsDir, { recursive: true });
+
+  const stamp = Date.now();
+  const rand = Math.random().toString(36).slice(2, 8);
+  const outName = `design-${stamp}-${rand}${ext}`;
+  const outPath = path.join(uploadsDir, outName);
+  await writeFile(outPath, buf);
+
+  return NextResponse.json({ url: `/uploads/${outName}` }, { status: 201 });
 }
