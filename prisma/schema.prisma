@@ -1,0 +1,433 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+}
+
+
+enum Size {
+  S
+  M
+  L
+  XL
+  XXL
+}
+
+enum OutletType {
+  WAREHOUSE
+  OFFLINE_STORE
+  ONLINE
+}
+
+enum StockMovementType {
+  IN
+  OUT
+  TRANSFER_IN
+  TRANSFER_OUT
+  ADJUSTMENT
+}
+
+enum OrderChannel {
+  SHOPEE
+  TIKTOK
+  OFFLINE_STORE
+  RESELLER
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  QRIS
+}
+
+enum OrderStatus {
+  NEW
+  PAID
+  SHIPPED
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderSource {
+  MANUAL
+  API
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  isActive     Boolean  @default(true)
+  // role diperlukan untuk authorization (admin guard)
+  // di MySQL kamu kolomnya bernama `role` (VARCHAR)
+  role         String   @default("ADMIN")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // ✅ opposite relation
+  authSessions AuthSession[]
+
+  // ✅ notifications
+  notifications Notification[]
+  @@map("user")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String?
+  // optional role broadcast (ex: ADMIN)
+  role      String?
+  type      String   @default("INFO")
+  title     String
+  message   String?
+  href      String?
+  isRead    Boolean  @default(false)
+  readAt    DateTime?
+  metaJson  Json?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isRead, createdAt])
+  @@index([role, isRead, createdAt])
+  @@map("notification")
+}
+
+model AuthSession {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("authsession")
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  name        String
+  code        String?   @unique
+  description String?
+  category    String
+  imageUrl    String?
+  costPrice   Int       @default(0)
+  sellPrice   Int       @default(0)
+  isActive    Boolean   @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  variants   ProductVariant[]
+  orderItems OrderItem[]
+  @@map("product")
+}
+
+model ProductVariant {
+  id        String    @id @default(cuid())
+  productId String
+  size      Size
+  color     String?
+  sku       String    @unique
+  price     Int
+  minQty    Int       @default(0)
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  stocks              Stock[]
+  stockMovements      StockMovement[]
+  orderItems          OrderItem[]
+  marketplaceProducts MarketplaceProduct[]
+
+  // ✅ opposite relations
+  stockInItems       StockInItem[]
+  stockTransferItems StockTransferItem[]
+
+  // ✅ mapping SKU marketplace
+  channelSkuMaps      ChannelSkuMap[]
+
+
+  @@index([productId])
+  @@index([sku])
+  @@map("productvariant")
+}
+
+model Outlet {
+  id        String     @id @default(cuid())
+  name      String
+  type      OutletType @default(WAREHOUSE)
+  isActive  Boolean    @default(true)
+  deletedAt DateTime?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  stocks             Stock[]
+  stockMovements     StockMovement[]
+  stockIns           StockIn[]
+  stockTransfersFrom StockTransfer[] @relation("TransferFrom")
+  stockTransfersTo   StockTransfer[] @relation("TransferTo")
+  orders             Order[]
+  @@map("outlet")
+}
+
+model Stock {
+  id        String   @id @default(cuid())
+  outletId  String
+  variantId String
+  qty       Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  outlet  Outlet         @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([outletId, variantId])
+  @@index([variantId])
+  @@index([outletId])
+  @@map("stock")
+}
+
+model StockMovement {
+  id        String            @id @default(cuid())
+  type      StockMovementType
+  outletId  String
+  variantId String
+  qty       Int
+  refType   String?
+  refId     String?
+  note      String?
+  createdAt DateTime          @default(now())
+
+  outlet  Outlet         @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([variantId])
+  @@index([outletId])
+  @@index([createdAt])
+  @@index([type])
+  @@map("stockmovement")
+}
+
+model StockIn {
+  id        String   @id @default(cuid())
+  outletId  String
+  supplier  String?
+  date      DateTime
+  note      String?
+  createdAt DateTime @default(now())
+
+  outlet Outlet        @relation(fields: [outletId], references: [id], onDelete: Restrict)
+  items  StockInItem[]
+  @@map("stockin")
+}
+
+model StockInItem {
+  id        String   @id @default(cuid())
+  stockInId String
+  variantId String
+  qty       Int
+  createdAt DateTime @default(now())
+
+  stockIn StockIn        @relation(fields: [stockInId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  @@index([variantId])
+  @@index([stockInId])
+  @@map("stockinitem")
+}
+
+model StockTransfer {
+  id           String   @id @default(cuid())
+  fromOutletId String
+  toOutletId   String
+  date         DateTime
+  note         String?
+  createdAt    DateTime @default(now())
+
+  fromOutlet Outlet              @relation("TransferFrom", fields: [fromOutletId], references: [id], onDelete: Restrict)
+  toOutlet   Outlet              @relation("TransferTo", fields: [toOutletId], references: [id], onDelete: Restrict)
+  items      StockTransferItem[]
+
+  @@index([fromOutletId])
+  @@index([toOutletId])
+  @@index([date])
+  @@map("stocktransfer")
+}
+
+model StockTransferItem {
+  id              String @id @default(cuid())
+  stockTransferId String
+  variantId       String
+  qty             Int
+
+  stockTransfer StockTransfer  @relation(fields: [stockTransferId], references: [id], onDelete: Cascade)
+  variant       ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  @@index([variantId])
+  @@index([stockTransferId])
+  @@map("stocktransferitem")
+}
+
+model Order {
+  id                 String       @id @default(cuid())
+  orderCode          String       @unique
+  channel            OrderChannel
+  source             OrderSource  @default(MANUAL)
+  outletId           String?
+  marketplaceOrderId String?
+  externalOrderId    String?
+  totalAmount        Int
+  status             OrderStatus  @default(NEW)
+  paymentMethod      PaymentMethod?
+  customerName       String?
+  note               String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  outlet Outlet?     @relation(fields: [outletId], references: [id], onDelete: SetNull)
+  items  OrderItem[]
+
+  @@index([channel])
+  @@index([outletId])
+  @@index([createdAt])
+  @@index([marketplaceOrderId])
+  @@unique([channel, externalOrderId])
+  @@map("order")
+}
+
+model WebhookEvent {
+  id            String      @id @default(cuid())
+  channel       OrderChannel
+  idempotencyKey String     @unique
+  externalEventId String?
+  externalOrderId String?
+  payloadJson   Json
+  status        String      @default("RECEIVED")
+  errorMessage  String?
+  receivedAt    DateTime    @default(now())
+  processedAt   DateTime?
+
+  @@index([channel])
+  @@index([receivedAt])
+  @@index([externalOrderId])
+  @@map("webhookevent")
+}
+
+model ChannelSkuMap {
+  id            String      @id @default(cuid())
+  channel       OrderChannel
+  externalSkuId String
+  variantId     String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([channel, externalSkuId])
+  @@index([variantId])
+  @@map("channelskumap")
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  productId String
+  variantId String
+  qty       Int
+  price     Int
+  subtotal  Int
+
+  order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product        @relation(fields: [productId], references: [id], onDelete: Restrict)
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([variantId])
+  @@index([productId])
+  @@map("orderitem")
+}
+
+model MarketplaceAccount {
+  id              String       @id @default(cuid())
+  channel         OrderChannel
+  name            String?
+  credentialsEnc  String
+  accessTokenEnc  String?
+  refreshTokenEnc String?
+  tokenExpiresAt  DateTime?
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  products MarketplaceProduct[]
+
+  @@index([channel])
+  @@map("marketplaceaccount")
+}
+
+model MarketplaceProduct {
+  id             String   @id @default(cuid())
+  accountId      String
+  variantId      String
+  marketplaceSku String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  account MarketplaceAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  variant ProductVariant     @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, variantId])
+  @@index([marketplaceSku])
+  @@index([variantId])
+  @@map("marketplaceproduct")
+}
+
+
+model AuditLog {
+  id        String   @id @default(cuid())
+
+  // Who
+  userId   String?
+  username String?
+  role     String?
+
+  // What
+  action   String
+  model    String?
+  entity   String?
+  entityId String?
+
+  // Request context
+  method    String?
+  path      String?
+  ip        String?
+  userAgent String?
+
+  // Extra details
+  data     Json?
+  metadata Json?
+
+  // Legacy (kept for backward-compat with older DBs)
+  metaJson String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([username])
+  @@index([model])
+  @@index([entity])
+  @@index([createdAt])
+  @@map("auditlog")
+}
