@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
-// Next.js 15: `params` is a Promise in dynamic route handlers.
+// Next.js 15 route handlers type `params` as a Promise for dynamic segments.
+// Use `await params` to satisfy Next's type checker and avoid build failures.
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
