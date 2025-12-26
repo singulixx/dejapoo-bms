@@ -32,61 +32,23 @@ export async function GET(req: Request) {
   if (format === "xlsx") {
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet("Stock");
-
-    ws.addRow([
-      "Outlet",
-      "OutletType",
-      "Product",
-      "SKU",
-      "Size",
-      "Color",
-      "Qty",
-      "MinQty",
-    ]);
-
-    // ✅ loop data (bukan rows) supaya field-nya sesuai
-    for (const r of data) {
-      ws.addRow([
-        r.outlet,
-        r.outletType,
-        r.product,
-        r.sku,
-        r.size,
-        r.color,
-        r.qty,
-        r.minQty,
-      ]);
+    ws.addRow(["Outlet","Product","Variant","SKU","Size","Color","Qty","MinQty"]); 
+    for (const r of rows) {
+      ws.addRow([r.outletName, r.productName, r.variantName, r.sku, r.size, r.color || "", r.qty, r.minQty]);
     }
-
     const buf = await wb.xlsx.writeBuffer();
     return new NextResponse(Buffer.from(buf), {
       status: 200,
       headers: {
-        "Content-Type":
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": `attachment; filename="stock-report.xlsx"`,
       },
     });
   }
 
   if (format === "csv") {
-    const header = [
-      "outlet",
-      "outletType",
-      "product",
-      "sku",
-      "size",
-      "color",
-      "qty",
-      "minQty",
-    ];
-    const lines = [
-      header.join(","),
-      ...data.map((d) =>
-        header.map((k) => JSON.stringify((d as any)[k] ?? "")).join(","),
-      ),
-    ];
-
+    const header = ["outlet","outletType","product","sku","size","color","qty","minQty"];
+    const lines = [header.join(","), ...data.map(d => header.map(k => JSON.stringify((d as any)[k] ?? "")).join(","))];
     return new NextResponse(lines.join("\n"), {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",

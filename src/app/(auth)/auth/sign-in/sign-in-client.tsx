@@ -4,11 +4,7 @@ import SignInClient from "./sign-in-client";
 export default function SignInPage() {
   return (
     <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-sm text-slate-500">Loading…</div>
-        </div>
-      }
+      fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}
     >
       <SignInClient />
     </Suspense>

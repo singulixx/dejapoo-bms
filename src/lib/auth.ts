@@ -4,11 +4,7 @@ import { requestContext } from "@/lib/request-context";
 
 // NOTE: role is stored as VARCHAR in DB and may include values like
 // OWNER / ADMIN / CASHIER / WAREHOUSE, etc. Keep this flexible.
-export type AccessTokenPayload = {
-  sub: string;
-  username: string;
-  role: string;
-};
+export type AccessTokenPayload = { sub: string; username: string; role: string };
 
 export function getBearerToken(req: Request) {
   const h = req.headers.get("authorization") || "";
@@ -18,47 +14,37 @@ export function getBearerToken(req: Request) {
 }
 
 export function verifyAccessToken(token: string): AccessTokenPayload {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error("JWT_SECRET is not set");
-  }
-  return jwt.verify(token, secret) as AccessTokenPayload;
+  return jwt.verify(token, process.env.JWT_SECRET!) as AccessTokenPayload;
 }
 
 function getReqMeta(req: Request) {
-  // Best effort IP from headers.
+  // NextRequest.ip is not available here; best effort from headers.
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     req.headers.get("x-real-ip") ||
-    undefined;
+    null;
 
-  // IMPORTANT: RequestContext expects path: string | undefined (NOT null)
-  let pathname: string | undefined;
+  // Always prefer the real request URL path. (x-pathname can be spoofed or missing)
+  let path: string | null = null;
   try {
-    pathname = new URL(req.url).pathname || undefined;
+    path = new URL(req.url).pathname;
   } catch {
-    pathname = undefined;
+    path = null;
   }
-
-  const userAgent = req.headers.get("user-agent") || undefined;
 
   return {
     method: req.method,
-    path: pathname,
-    ip,
-    userAgent,
+    path: path,
+    ip: ip,
+    userAgent: req.headers.get("user-agent") || null,
   };
 }
 
 export function requireAuth(req: Request) {
   const token = getBearerToken(req);
   if (!token) {
-    return {
-      ok: false as const,
-      res: NextResponse.json({ message: "Unauthorized" }, { status: 401 }),
-    };
+    return { ok: false as const, res: NextResponse.json({ message: "Unauthorized" }, { status: 401 }) };
   }
-
   try {
     const payload = verifyAccessToken(token);
 
@@ -67,28 +53,23 @@ export function requireAuth(req: Request) {
       req: getReqMeta(req),
     };
 
-    // Set ALS context for downstream logs/audit hooks, best-effort.
+    // Best-effort: set context for the current async chain.
+    // NOTE: some libraries (e.g. interactive transactions) can lose ALS context,
+    // so routes that use prisma.$transaction should wrap their work with
+    // requestContext.run(ctx, async () => { ... }).
     requestContext.enterWith(ctx);
 
     return { ok: true as const, user: payload, ctx };
   } catch {
-    return {
-      ok: false as const,
-      res: NextResponse.json({ message: "Unauthorized" }, { status: 401 }),
-    };
+    return { ok: false as const, res: NextResponse.json({ message: "Unauthorized" }, { status: 401 }) };
   }
 }
 
 export function requireAdmin(req: Request) {
   const auth = requireAuth(req);
   if (!auth.ok) return auth;
-
   if (auth.user.role !== "ADMIN") {
-    return {
-      ok: false as const,
-      res: NextResponse.json({ message: "Forbidden" }, { status: 403 }),
-    };
+    return { ok: false as const, res: NextResponse.json({ message: "Forbidden" }, { status: 403 }) };
   }
-
   return auth;
 }
