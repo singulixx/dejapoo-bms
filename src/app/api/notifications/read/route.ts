@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 
@@ -19,9 +20,11 @@ export async function POST(req: Request) {
   const role = auth.user.role;
 
   const now = new Date();
-  const whereAccess = {
+
+  // NOTE: must NOT be `as const` because Prisma types expect a mutable array.
+  const whereAccess: Prisma.NotificationWhereInput = {
     OR: [{ userId }, { role }, { userId: null, role: null }],
-  } as const;
+  };
 
   if (parsed.data.all) {
     await prisma.notification.updateMany({
@@ -38,7 +41,7 @@ export async function POST(req: Request) {
   }
 
   const unreadCount = await prisma.notification.count({
-    where: { isRead: false, ...whereAccess },
+    where: { ...whereAccess, isRead: false },
   });
 
   return NextResponse.json({ ok: true, unreadCount });
