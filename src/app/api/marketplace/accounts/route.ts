@@ -7,17 +7,20 @@ import { requireAdmin } from "@/lib/auth";
 const CreateSchema = z.object({
   channel: z.enum(["SHOPEE", "TIKTOK"]),
   name: z.string().optional().nullable(),
-  credentials: z.record(z.any()),
+  // ✅ Zod terbaru: record butuh (keyType, valueType)
+  credentials: z.record(z.string(), z.unknown()),
 });
 
-function encryptJson(data: any) {
+function encryptJson(data: unknown) {
   const secret = process.env.MARKETPLACE_SECRET || process.env.JWT_SECRET || "dev-secret";
   const iv = crypto.randomBytes(12);
   const key = crypto.createHash("sha256").update(secret).digest();
   const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+
   const plaintext = Buffer.from(JSON.stringify(data), "utf8");
   const enc = Buffer.concat([cipher.update(plaintext), cipher.final()]);
   const tag = cipher.getAuthTag();
+
   return Buffer.concat([iv, tag, enc]).toString("base64");
 }
 
@@ -27,7 +30,12 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => null);
   const parsed = CreateSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ message: "Invalid payload", issues: parsed.error.issues }, { status: 400 });
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: "Invalid payload", issues: parsed.error.issues },
+      { status: 400 }
+    );
+  }
 
   const account = await prisma.marketplaceAccount.create({
     data: {
@@ -50,5 +58,6 @@ export async function GET(req: Request) {
     orderBy: [{ channel: "asc" }, { createdAt: "desc" }],
     select: { id: true, channel: true, name: true, isActive: true, createdAt: true, updatedAt: true },
   });
+
   return NextResponse.json({ items });
 }
