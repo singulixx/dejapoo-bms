@@ -3,22 +3,17 @@ import { requestContext } from "@/lib/request-context";
 
 // Prisma v6: middleware ($use) is removed. Use $extends(query) to implement auditing.
 
-const globalForPrisma = globalThis as unknown as {
-  prismaBase?: PrismaClient;
-  prisma?: PrismaClient;
-};
+// IMPORTANT (TypeScript):
+// `PrismaClient.$extends(...)` returns an *extended client type*.
+// If we type `globalForPrisma.prisma` as just `PrismaClient`, TypeScript will
+// see a union of "PrismaClient | ExtendedClient" at the export site.
+// That union causes delegate methods like `model.groupBy` to become an
+// "uncallable union" during `next build` ("This expression is not callable").
+//
+// Solution: define the extended client type explicitly and use it everywhere.
 
-// Base client (no extensions) — used to write AuditLog safely without recursion.
-const prismaBase =
-  globalForPrisma.prismaBase ??
-  new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-  });
-
-// Extended client used by the app.
-export const prisma =
-  globalForPrisma.prisma ??
-  prismaBase.$extends({
+const createPrisma = (base: PrismaClient) =>
+  base.$extends({
     query: {
       $allModels: {
         async $allOperations({ model, operation, args, query }: any) {
@@ -51,7 +46,8 @@ export const prisma =
 
             const auditAction = `${model ?? "UNKNOWN"}_${operation}`.toUpperCase();
 
-            await prismaBase.auditLog.create({
+            // Use the *base* client here to avoid recursion
+            await base.auditLog.create({
               data: {
                 userId: ctx.user.id,
                 username: ctx.user.username ?? null,
@@ -79,6 +75,23 @@ export const prisma =
       },
     },
   });
+
+export type ExtendedPrismaClient = ReturnType<typeof createPrisma>;
+
+const globalForPrisma = globalThis as unknown as {
+  prismaBase?: PrismaClient;
+  prisma?: ExtendedPrismaClient;
+};
+
+// Base client (no extensions) — used to write AuditLog safely without recursion.
+const prismaBase =
+  globalForPrisma.prismaBase ??
+  new PrismaClient({
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+  });
+
+// Extended client used by the app.
+export const prisma: ExtendedPrismaClient = globalForPrisma.prisma ?? createPrisma(prismaBase);
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prismaBase = prismaBase;
