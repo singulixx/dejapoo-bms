@@ -31,8 +31,7 @@ export async function GET(req: Request) {
   const monthStart = startOfMonth(now);
   const trendStart = startOfNDaysAgo(now, 29);
 
-  const [
-    totalProducts,
+  let totalProducts,
     totalVariants,
     stockAgg,
     outlets,
@@ -42,58 +41,92 @@ export async function GET(req: Request) {
     topProducts,
     stockRows,
     trendRows,
-    movementRows,
-  ] = await Promise.all([
-    prisma.product.count({ where: { deletedAt: null } }),
-    prisma.productVariant.count({ where: { deletedAt: null } }),
-    prisma.stock.groupBy({ by: ["outletId"], _sum: { qty: true } }),
-    prisma.outlet.findMany({
-      where: { deletedAt: null, isActive: true },
-      select: { id: true, name: true, type: true },
-    }),
-    prisma.order.aggregate({
-      where: { createdAt: { gte: dayStart } },
-      _sum: { totalAmount: true },
-      _count: { _all: true },
-    }),
-    prisma.order.aggregate({
-      where: { createdAt: { gte: monthStart } },
-      _sum: { totalAmount: true },
-      _count: { _all: true },
-    }),
-    prisma.order.groupBy({
-      by: ["channel"],
-      where: { createdAt: { gte: dayStart } },
-      _count: { _all: true },
-      _sum: { totalAmount: true },
-    }),
-    prisma.orderItem.groupBy({
-      by: ["productId"],
-      _sum: { qty: true, subtotal: true },
-      orderBy: { _sum: { subtotal: "desc" } },
-      take: 10,
-    }),
-    prisma.stock.findMany({ include: { variant: { select: { minQty: true } } } }),
-    prisma.$queryRaw<
-      { d: string; channel: string; orders: bigint; amount: bigint }[]
-    >(Prisma.sql`
-      SELECT to_char(("createdAt")::date, 'YYYY-MM-DD') as d,
-             "channel" as channel,
-             COUNT(*)::bigint as orders,
-             COALESCE(SUM("totalAmount"),0)::bigint as amount
-      FROM "Order"
-      WHERE "createdAt" >= ${trendStart}
-      GROUP BY d, channel
-      ORDER BY d ASC
-    `),
-    prisma.stockMovement.groupBy({
-      by: ["outletId", "type"],
-      where: { createdAt: { gte: trendStart } },
-      _sum: { qty: true },
-    }),
-  ]);
+    movementRows;
 
-  const lowStockCount = stockRows.filter((r) => r.qty < r.variant.minQty).length;
+  try {
+    [
+      totalProducts,
+      totalVariants,
+      stockAgg,
+      outlets,
+      salesToday,
+      salesMonth,
+      channelToday,
+      topProducts,
+      stockRows,
+      trendRows,
+      movementRows,
+    ] = await Promise.all([
+      prisma.product.count({ where: { deletedAt: null } }),
+      prisma.productVariant.count({ where: { deletedAt: null } }),
+      prisma.stock.groupBy({ by: ["outletId"], _sum: { qty: true } }),
+      prisma.outlet.findMany({
+        where: { deletedAt: null, isActive: true },
+        select: { id: true, name: true, type: true },
+      }),
+      prisma.order.aggregate({
+        where: { createdAt: { gte: dayStart } },
+        _sum: { totalAmount: true },
+        _count: { _all: true },
+      }),
+      prisma.order.aggregate({
+        where: { createdAt: { gte: monthStart } },
+        _sum: { totalAmount: true },
+        _count: { _all: true },
+      }),
+      prisma.order.groupBy({
+        by: ["channel"],
+        where: { createdAt: { gte: dayStart } },
+        _count: { _all: true },
+        _sum: { totalAmount: true },
+      }),
+      prisma.orderItem.groupBy({
+        by: ["productId"],
+        _sum: { qty: true, subtotal: true },
+        orderBy: { _sum: { subtotal: "desc" } },
+        take: 10,
+      }),
+      prisma.stock.findMany({ include: { variant: { select: { minQty: true } } } }),
+      // NOTE: table is mapped with @@map("order") which becomes quoted "order" in Postgres.
+      // Using "Order" will fail (case-sensitive) and can also collide with reserved keywords.
+      prisma.$queryRaw<
+        { d: string; channel: string; orders: bigint; amount: bigint }[]
+      >(Prisma.sql`
+        SELECT to_char(("createdAt")::date, 'YYYY-MM-DD') as d,
+               "channel" as channel,
+               COUNT(*)::bigint as orders,
+               COALESCE(SUM("totalAmount"),0)::bigint as amount
+        FROM "order"
+        WHERE "createdAt" >= ${trendStart}
+        GROUP BY ("createdAt")::date, "channel"
+        ORDER BY ("createdAt")::date ASC
+      `),
+      prisma.stockMovement.groupBy({
+        by: ["outletId", "type"],
+        where: { createdAt: { gte: trendStart } },
+        _sum: { qty: true },
+      }),
+    ]);
+  } catch (err: any) {
+    // Surface a readable error in Vercel logs, while returning a safe message to the client.
+    console.error("[dashboard/summary] failed", err);
+    return NextResponse.json(
+      {
+        message: "Failed to build dashboard summary",
+        // Include a short message to speed up debugging in production.
+        // (This does not include secrets; it's typically a Prisma error code or SQL text.)
+        error: String(err?.message ?? err),
+        hint: "Open Vercel → Deployments → (latest) → Functions → /api/dashboard/summary to see full logs.",
+      },
+      { status: 500 }
+    );
+  }
+
+  // Be defensive: if a Stock row somehow lost its Variant relation, avoid crashing the dashboard.
+  const lowStockCount = stockRows.filter((r) => {
+    const min = (r as any).variant?.minQty ?? 0;
+    return Number((r as any).qty ?? 0) < Number(min);
+  }).length;
 
   const outletStock = outlets.map((o) => {
     const hit = stockAgg.find((s) => s.outletId === o.id);
