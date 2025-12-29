@@ -5,14 +5,14 @@ import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 type LoginResult =
-  | { ok: true; token: string; user: { id: string; username: string; role: string } }
-  | { ok: false; message: string };
+  | { accessToken: string }
+  | { message: string };
 
 export default function SignInClient() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  const callbackUrl = useMemo(() => sp.get("callbackUrl") || "/", [sp]);
+  const callbackUrl = useMemo(() => sp.get("callbackUrl") || "/dashboard", [sp]);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -32,19 +32,25 @@ export default function SignInClient() {
       });
 
       const data = (await res.json().catch(() => null)) as LoginResult | null;
-      if (!res.ok || !data || ("ok" in data && data.ok === false)) {
-        setError((data as any)?.message || "Login gagal");
-        return;
-      }
+if (!res.ok || !data) {
+  setError((data as any)?.message || "Login gagal");
+  return;
+}
 
-      // Token is returned by the API. For this template, we store it in localStorage
-      // and send it as Bearer token from the client.
-      // If you prefer httpOnly cookies, adjust the API + middleware.
-      const token = (data as any).token as string;
-      localStorage.setItem("access_token", token);
+const token = (data as any).accessToken as string | undefined;
+if (!token) {
+  setError("Login gagal: token tidak ditemukan");
+  return;
+}
 
-      router.replace(callbackUrl);
-      router.refresh();
+// Store token for client-side API calls.
+localStorage.setItem("accessToken", token);
+
+// If callbackUrl is root, send user to dashboard by default.
+const dest = callbackUrl && callbackUrl !== "/" ? callbackUrl : "/dashboard";
+router.replace(dest);
+router.refresh();
+
     } catch (err: any) {
       setError(err?.message || "Login gagal");
     } finally {

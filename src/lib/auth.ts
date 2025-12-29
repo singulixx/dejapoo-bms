@@ -13,6 +13,23 @@ export function getBearerToken(req: Request) {
   return token;
 }
 
+
+function getCookieToken(req: Request, name: string) {
+  const cookie = req.headers.get("cookie") || "";
+  if (!cookie) return null;
+  const parts = cookie.split(";").map((p) => p.trim());
+  for (const p of parts) {
+    if (!p) continue;
+    const eq = p.indexOf("=");
+    if (eq === -1) continue;
+    const k = p.slice(0, eq).trim();
+    if (k !== name) continue;
+    return decodeURIComponent(p.slice(eq + 1));
+  }
+  return null;
+}
+
+
 export function verifyAccessToken(token: string): AccessTokenPayload {
   return jwt.verify(token, process.env.JWT_SECRET!) as AccessTokenPayload;
 }
@@ -41,7 +58,7 @@ function getReqMeta(req: Request) {
 }
 
 export function requireAuth(req: Request) {
-  const token = getBearerToken(req);
+  const token = getBearerToken(req) || getCookieToken(req, "accessToken");
   if (!token) {
     return { ok: false as const, res: NextResponse.json({ message: "Unauthorized" }, { status: 401 }) };
   }
