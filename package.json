@@ -7,8 +7,7 @@
     "build": "next build && node scripts/vercel-fix-trace.mjs",
     "start": "next start",
     "lint": "next lint",
-    "create-admin": "node scripts/create-admin.mjs",
-    "create-user": "node scripts/create-user.mjs"
+    "create-admin": "node scripts/create-admin.mjs"
   },
   "dependencies": {
     "apexcharts": "^4.5.0",

@@ -46,21 +46,10 @@ And voila! You're now ready to start developing. **Happy coding**!
 
 ## Environment Variables
 
-- `DATABASE_URL` (Supabase Postgres pooled / transaction mode)
-- `DIRECT_URL` (Supabase Postgres direct / session mode, required for Prisma migrations)
+- `DATABASE_URL` (PostgreSQL)
 - `ADMIN_USERNAME` / `ADMIN_PASSWORD` (bootstrap admin)
 - `WEBHOOK_SECRET_SHOPEE` (header `x-webhook-secret`)
 - `WEBHOOK_SECRET_TIKTOK` (header `x-webhook-secret`)
-
-## Create Users (username + password)
-
-Create a user from your terminal:
-
-```bash
-npm run create-user -- --username=owner --password='Owner#123' --role=OWNER
-```
-
-Roles are stored as a simple string in the DB (recommended: `OWNER`, `ADMIN`, `WAREHOUSE`, `STAFF`).
 
 ## Webhook Endpoints (for Vercel)
 
