@@ -7,12 +7,12 @@ import {
   DropdownTrigger,
 } from "@/components/ui/dropdown";
 import { cn } from "@/lib/utils";
+import { LetterAvatar } from "@/components/common/letter-avatar";
 import { apiFetch } from "@/lib/client";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogOutIcon, SettingsIcon, UserIcon } from "./icons";
+import { LogOutIcon, SettingsIcon } from "./icons";
 
 export function UserInfo() {
   const router = useRouter();
@@ -21,7 +21,6 @@ export function UserInfo() {
 
   const USER = {
     name: user?.username || "User",
-    img: "/images/user/user-03.png",
   };
 
   useEffect(() => {
@@ -57,14 +56,7 @@ export function UserInfo() {
         <span className="sr-only">My Account</span>
 
         <figure className="flex items-center gap-3">
-          <Image
-            src={USER.img}
-            className="size-12"
-            alt={`Avatar of ${USER.name}`}
-            role="presentation"
-            width={200}
-            height={200}
-          />
+          <LetterAvatar name={USER.name} className="size-12" />
           <figcaption className="flex items-center gap-1 font-medium text-dark dark:text-dark-6 max-[1024px]:sr-only">
             <span>{USER.name}</span>
 
@@ -87,15 +79,7 @@ export function UserInfo() {
         <h2 className="sr-only">User information</h2>
 
         <figure className="flex items-center gap-2.5 px-5 py-3.5">
-          <Image
-            src={USER.img}
-            className="size-12"
-            alt={`Avatar for ${USER.name}`}
-            role="presentation"
-            width={200}
-            height={200}
-          />
-
+          <LetterAvatar name={USER.name} className="size-12" />
           <figcaption className="space-y-1 text-base font-medium">
             <div className="mb-2 leading-none text-dark dark:text-white">
               {USER.name}
@@ -108,16 +92,6 @@ export function UserInfo() {
         <hr className="border-[#E8E8E8] dark:border-dark-3" />
 
         <div className="p-2 text-base text-[#4B5563] dark:text-dark-6 [&>*]:cursor-pointer">
-          <Link
-            href={"/profile"}
-            onClick={() => setIsOpen(false)}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[9px] hover:bg-gray-2 hover:text-dark dark:hover:bg-dark-3 dark:hover:text-white"
-          >
-            <UserIcon />
-
-            <span className="mr-auto text-base font-medium">View profile</span>
-          </Link>
-
           <Link
             href={"/pages/settings"}
             onClick={() => setIsOpen(false)}

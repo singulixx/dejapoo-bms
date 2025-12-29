@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dropdown";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
+import { LetterAvatar } from "@/components/common/letter-avatar";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { BellIcon } from "./icons";
@@ -183,14 +183,7 @@ export function Notification() {
                     !item.isRead && "bg-blue-light-5/50 dark:bg-dark-3",
                   )}
                 >
-                  <Image
-                    src="/images/user/user-03.png"
-                    className="size-14 rounded-full object-cover"
-                    width={200}
-                    height={200}
-                    alt="Notification"
-                  />
-
+                  <LetterAvatar name={"Notification"} className="size-14" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <strong className="block truncate text-sm font-medium text-dark dark:text-white">

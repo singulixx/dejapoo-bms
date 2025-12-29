@@ -1,22 +1,14 @@
 import { UploadIcon } from "@/assets/icons";
 import { ShowcaseSection } from "@/components/Layouts/showcase-section";
-import Image from "next/image";
+import { LetterAvatar } from "@/components/common/letter-avatar";
 
 export function UploadPhotoForm() {
   return (
     <ShowcaseSection title="Your Photo" className="!p-7">
       <form>
         <div className="mb-4 flex items-center gap-3">
-          <Image
-            src="/images/user/user-03.png"
-            width={55}
-            height={55}
-            alt="User"
-            className="size-14 rounded-full object-cover"
-            quality={90}
-          />
-
-          <div>
+          <LetterAvatar name={"User"} className="size-14" />
+<div>
             <span className="mb-1.5 font-medium text-dark dark:text-white">
               Edit your photo
             </span>
