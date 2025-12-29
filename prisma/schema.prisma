@@ -3,8 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // For Supabase (recommended):
+  // - DATABASE_URL  -> pooled / transaction mode (pgbouncer)
+  // - DIRECT_URL    -> direct / session mode (for Prisma migrations)
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
 }
 
 enum UserRole {

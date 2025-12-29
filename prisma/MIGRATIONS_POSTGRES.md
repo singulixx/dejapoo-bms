@@ -1,22 +1,41 @@
-# Prisma migrations note (PostgreSQL)
+# Prisma migrations for Supabase Postgres
 
-This project was migrated from **MySQL** to **PostgreSQL** (Prisma datasource provider).
+The project previously used MySQL. Those migrations were moved to:
 
-The previous MySQL migrations have been moved to:
 - `prisma/migrations_mysql_backup/`
 
-Because Prisma migration SQL is **provider-specific**, those MySQL migration files should NOT be applied to PostgreSQL.
+MySQL migration SQL is not compatible with Postgres, so you should generate fresh migrations for Supabase.
 
-## What to do next
+## 1) Set env vars
 
-1) Point `DATABASE_URL` to your PostgreSQL database.
-2) Recreate migrations for PostgreSQL:
+Make sure you have **both**:
 
-- For local development (creates a new initial migration):
-  - `npx prisma migrate dev --name init`
+- `DATABASE_URL` (pooled/transaction mode)
+- `DIRECT_URL` (direct/session mode)
 
-- If you prefer not to use migrations yet (quick start):
-  - `npx prisma db push`
+You can copy them from Supabase: **Project Settings → Database → Connection string**.
 
-After generating new migrations, deploy using:
-- `npx prisma migrate deploy`
+## 2) Generate a fresh Postgres migration (local)
+
+```bash
+npx prisma generate
+npx prisma migrate dev --name init
+```
+
+## 3) Deploy migrations on Vercel
+
+After pushing your new `prisma/migrations/*`, use:
+
+```bash
+npx prisma migrate deploy
+```
+
+## Quick alternative (not recommended long term)
+
+If you just want to create tables without migrations:
+
+```bash
+npx prisma db push
+```
+
+For the MVP roadmap (auditability), prefer migrations.
