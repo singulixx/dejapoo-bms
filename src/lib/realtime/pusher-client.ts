@@ -4,9 +4,18 @@ import Pusher from "pusher-js";
 import { getAccessToken } from "@/lib/client";
 
 let singleton: Pusher | null = null;
+let lastToken: string | null = null;
 
 export function getPusherClient() {
-  if (singleton) return singleton;
+  const currentToken = getAccessToken();
+  // Recreate client if token changed (e.g. after login).
+  if (singleton && lastToken === currentToken) return singleton;
+  if (singleton) {
+    try {
+      singleton.disconnect();
+    } catch {}
+    singleton = null;
+  }
   const key = process.env.NEXT_PUBLIC_PUSHER_KEY;
   const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER;
   if (!key || !cluster) return null;
@@ -17,13 +26,12 @@ export function getPusherClient() {
     authEndpoint: "/api/realtime/auth",
     auth: {
       headers: {
-        Authorization: (() => {
-          const t = getAccessToken();
-          return t ? `Bearer ${t}` : "";
-        })(),
+        Authorization: currentToken ? `Bearer ${currentToken}` : "",
       },
     },
   });
+
+  lastToken = currentToken;
 
   return singleton;
 }

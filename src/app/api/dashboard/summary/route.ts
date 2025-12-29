@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
 
 function startOfDay(d: Date) {
   const x = new Date(d);
@@ -43,69 +44,60 @@ export async function GET(req: Request) {
     trendRows,
     movementRows,
   ] = await Promise.all([
-      prisma.product.count({ where: { deletedAt: null } }),
-      prisma.productVariant.count({ where: { deletedAt: null } }),
-      // Prisma `groupBy` can trigger TS overload/union issues in some Next.js builds.
-      // Use SQL aggregation instead (stable typings).
-      prisma.$queryRawUnsafe<{ outletId: string; qty: bigint }[]>(
-        "SELECT outletId, COALESCE(SUM(qty),0) as qty FROM Stock GROUP BY outletId"
-      ),
-      prisma.outlet.findMany({ where: { deletedAt: null, isActive: true }, select: { id: true, name: true, type: true } }),
-      prisma.order.aggregate({ where: { createdAt: { gte: dayStart } }, _sum: { totalAmount: true }, _count: { _all: true } }),
-      prisma.order.aggregate({ where: { createdAt: { gte: monthStart } }, _sum: { totalAmount: true }, _count: { _all: true } }),
-      prisma.$queryRawUnsafe<
-        { channel: string; orders: bigint; amount: bigint }[]
-      >(
-        [
-          "SELECT channel, COUNT(*) as orders, COALESCE(SUM(totalAmount),0) as amount",
-          "FROM `Order`",
-          "WHERE createdAt >= ?",
-          "GROUP BY channel",
-        ].join("\n"),
-        dayStart
-      ),
-      prisma.$queryRawUnsafe<
-        { productId: string; qty: bigint; subtotal: bigint }[]
-      >(
-        [
-          "SELECT productId, COALESCE(SUM(qty),0) as qty, COALESCE(SUM(subtotal),0) as subtotal",
-          "FROM `OrderItem`",
-          "GROUP BY productId",
-          "ORDER BY subtotal DESC",
-          "LIMIT 10",
-        ].join("\n")
-      ),
-      prisma.stock.findMany({
-        include: { variant: { select: { minQty: true } } },
-      }),
-      prisma.$queryRawUnsafe<
-        { d: string; channel: string; orders: bigint; amount: bigint }[]
-      >(
-        [
-          "SELECT DATE(createdAt) as d, channel, COUNT(*) as orders, COALESCE(SUM(totalAmount),0) as amount",
-          "FROM `Order`",
-          "WHERE createdAt >= ?",
-          "GROUP BY d, channel",
-          "ORDER BY d ASC",
-        ].join("\n"),
-        trendStart
-      ),
-      prisma.$queryRawUnsafe<
-        { outletId: string; type: string; qty: bigint }[]
-      >(
-        `SELECT outletId, type, COALESCE(SUM(qty),0) as qty
-         FROM StockMovement
-         WHERE createdAt >= ?
-         GROUP BY outletId, type`,
-        trendStart
-      ),
-    ]);
+    prisma.product.count({ where: { deletedAt: null } }),
+    prisma.productVariant.count({ where: { deletedAt: null } }),
+    prisma.stock.groupBy({ by: ["outletId"], _sum: { qty: true } }),
+    prisma.outlet.findMany({
+      where: { deletedAt: null, isActive: true },
+      select: { id: true, name: true, type: true },
+    }),
+    prisma.order.aggregate({
+      where: { createdAt: { gte: dayStart } },
+      _sum: { totalAmount: true },
+      _count: { _all: true },
+    }),
+    prisma.order.aggregate({
+      where: { createdAt: { gte: monthStart } },
+      _sum: { totalAmount: true },
+      _count: { _all: true },
+    }),
+    prisma.order.groupBy({
+      by: ["channel"],
+      where: { createdAt: { gte: dayStart } },
+      _count: { _all: true },
+      _sum: { totalAmount: true },
+    }),
+    prisma.orderItem.groupBy({
+      by: ["productId"],
+      _sum: { qty: true, subtotal: true },
+      orderBy: { _sum: { subtotal: "desc" } },
+      take: 10,
+    }),
+    prisma.stock.findMany({ include: { variant: { select: { minQty: true } } } }),
+    prisma.$queryRaw<
+      { d: string; channel: string; orders: bigint; amount: bigint }[]
+    >(Prisma.sql`
+      SELECT to_char(("createdAt")::date, 'YYYY-MM-DD') as d,
+             "channel" as channel,
+             COUNT(*)::bigint as orders,
+             COALESCE(SUM("totalAmount"),0)::bigint as amount
+      FROM "Order"
+      WHERE "createdAt" >= ${trendStart}
+      GROUP BY d, channel
+      ORDER BY d ASC
+    `),
+    prisma.stockMovement.groupBy({
+      by: ["outletId", "type"],
+      where: { createdAt: { gte: trendStart } },
+      _sum: { qty: true },
+    }),
+  ]);
 
   const lowStockCount = stockRows.filter((r) => r.qty < r.variant.minQty).length;
 
   const outletStock = outlets.map((o) => {
     const hit = stockAgg.find((s) => s.outletId === o.id);
-    return { outletId: o.id, outletName: o.name, outletType: o.type, qty: Number(hit?.qty ?? 0) };
+    return { outletId: o.id, outletName: o.name, outletType: o.type, qty: Number(hit?._sum.qty ?? 0) };
   });
 
   const totalStock = outletStock.reduce((a, b) => a + (b.qty ?? 0), 0);
@@ -118,16 +110,16 @@ export async function GET(req: Request) {
   const top10 = topProducts.map((p) => ({
     productId: p.productId,
     productName: productNames.find((x) => x.id === p.productId)?.name ?? "Unknown",
-    qty: Number(p.qty ?? 0),
-    revenue: Number(p.subtotal ?? 0),
+    qty: Number(p._sum.qty ?? 0),
+    revenue: Number(p._sum.subtotal ?? 0),
   }));
 
   const channelSummary = ["SHOPEE", "TIKTOK", "OFFLINE_STORE"].map((ch) => {
     const hit = channelToday.find((c) => c.channel === ch);
     return {
       channel: ch,
-      orders: Number(hit?.orders ?? 0),
-      amount: Number(hit?.amount ?? 0),
+      orders: Number(hit?._count._all ?? 0),
+      amount: Number(hit?._sum.totalAmount ?? 0),
     };
   });
 
@@ -162,7 +154,7 @@ export async function GET(req: Request) {
   const outletPerf = outlets.map((o) => {
     const sumType = (t: string) => {
       const hit = movementRows.find((m) => m.outletId === o.id && m.type === t);
-      return Number(hit?.qty ?? 0);
+      return Number(hit?._sum.qty ?? 0);
     };
     return {
       outletId: o.id,
