@@ -154,3 +154,25 @@ Server akan melakukan trigger saat membuat notifikasi via `createAndEmitNotifica
 - Pastikan semua env di atas diset untuk **Production** (dan Preview kalau perlu).
 - Deploy biasa (Next.js App Router). Tidak perlu websocket server backend; Pusher handle realtime-nya.
 
+## Setup (Supabase Postgres)
+
+1) Copy `.env.example` to `.env` and fill:
+- `DATABASE_URL` = Supabase pooled/transaction (pgbouncer) URL (commonly `POSTGRES_PRISMA_URL`)
+- `DIRECT_URL` = Supabase direct/session URL (commonly `POSTGRES_URL_NON_POOLING`)
+- `JWT_SECRET` = random long secret
+
+2) Create tables:
+```bash
+npx prisma generate
+npx prisma migrate dev --name init
+```
+
+3) Create first user:
+```bash
+npm run create-user -- --username=owner --password="Owner#123" --role=OWNER
+```
+
+4) Run the app:
+```bash
+npm run dev
+```
