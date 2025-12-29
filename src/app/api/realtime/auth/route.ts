@@ -15,23 +15,12 @@ export async function POST(req: Request) {
   const auth = requireAuth(req);
   if (!auth.ok) return auth.res;
 
-  // pusher-js sends auth payload as x-www-form-urlencoded by default.
-  // Support both JSON and form-encoded bodies.
-  const ct = req.headers.get("content-type") || "";
-  let socketId: string | undefined;
-  let channelName: string | undefined;
-  if (ct.includes("application/json")) {
-    const body = (await req.json().catch(() => null)) as
-      | { socket_id?: string; channel_name?: string }
-      | null;
-    socketId = body?.socket_id;
-    channelName = body?.channel_name;
-  } else {
-    const raw = await req.text().catch(() => "");
-    const params = new URLSearchParams(raw);
-    socketId = params.get("socket_id") || undefined;
-    channelName = params.get("channel_name") || undefined;
-  }
+  const body = await req.json().catch(() => null) as
+    | { socket_id?: string; channel_name?: string }
+    | null;
+
+  const socketId = body?.socket_id;
+  const channelName = body?.channel_name;
   if (!socketId || !channelName) {
     return NextResponse.json({ message: "Invalid payload" }, { status: 400 });
   }

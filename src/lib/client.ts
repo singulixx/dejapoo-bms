@@ -11,7 +11,6 @@ export async function apiFetch(input: string, init: RequestInit = {}) {
   // Jangan set Content-Type untuk FormData (biar boundary otomatis)
   const isFormData = typeof FormData !== "undefined" && init.body instanceof FormData;
   if (!headers.has("Content-Type") && init.body && !isFormData) headers.set("Content-Type", "application/json");
-  // Ensure cookies are sent on same-origin calls (default is "same-origin", but keep explicit).
-  const res = await fetch(input, { ...init, headers, credentials: init.credentials ?? "same-origin" });
+  const res = await fetch(input, { ...init, headers });
   return res;
 }

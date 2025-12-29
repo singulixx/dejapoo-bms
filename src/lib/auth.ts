@@ -13,26 +13,22 @@ export function getBearerToken(req: Request) {
   return token;
 }
 
+
 function getCookieToken(req: Request, name: string) {
   const cookie = req.headers.get("cookie") || "";
   if (!cookie) return null;
-  // naive but robust enough: split by ';' then match key
   const parts = cookie.split(";").map((p) => p.trim());
   for (const p of parts) {
     if (!p) continue;
-    const idx = p.indexOf("=");
-    if (idx === -1) continue;
-    const k = p.slice(0, idx).trim();
+    const eq = p.indexOf("=");
+    if (eq === -1) continue;
+    const k = p.slice(0, eq).trim();
     if (k !== name) continue;
-    const v = p.slice(idx + 1);
-    try {
-      return decodeURIComponent(v);
-    } catch {
-      return v;
-    }
+    return decodeURIComponent(p.slice(eq + 1));
   }
   return null;
 }
+
 
 export function verifyAccessToken(token: string): AccessTokenPayload {
   return jwt.verify(token, process.env.JWT_SECRET!) as AccessTokenPayload;
@@ -62,7 +58,6 @@ function getReqMeta(req: Request) {
 }
 
 export function requireAuth(req: Request) {
-  // Prefer Authorization header, fallback to HttpOnly cookie set by /api/auth/login.
   const token = getBearerToken(req) || getCookieToken(req, "accessToken");
   if (!token) {
     return { ok: false as const, res: NextResponse.json({ message: "Unauthorized" }, { status: 401 }) };
@@ -90,9 +85,7 @@ export function requireAuth(req: Request) {
 export function requireAdmin(req: Request) {
   const auth = requireAuth(req);
   if (!auth.ok) return auth;
-  // Allow OWNER and ADMIN to access admin-level endpoints.
-  // (MVP: OWNER is effectively the super-admin.)
-  if (auth.user.role !== "ADMIN" && auth.user.role !== "OWNER") {
+  if (auth.user.role !== "ADMIN") {
     return { ok: false as const, res: NextResponse.json({ message: "Forbidden" }, { status: 403 }) };
   }
   return auth;

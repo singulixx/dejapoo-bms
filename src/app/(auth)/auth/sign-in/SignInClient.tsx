@@ -12,7 +12,7 @@ export default function SignInClient() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  const callbackUrl = useMemo(() => sp.get("callbackUrl") || "/", [sp]);
+  const callbackUrl = useMemo(() => sp.get("callbackUrl") || "/dashboard", [sp]);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -32,16 +32,25 @@ export default function SignInClient() {
       });
 
       const data = (await res.json().catch(() => null)) as LoginResult | null;
-      if (!res.ok || !data || !("accessToken" in data) || !data.accessToken) {
-        setError((data as any)?.message || "Login gagal");
-        return;
-      }
+if (!res.ok || !data) {
+  setError((data as any)?.message || "Login gagal");
+  return;
+}
 
-      // Store token for client-side API calls. (Server routes can also read HttpOnly cookie.)
-      localStorage.setItem("accessToken", data.accessToken);
+const token = (data as any).accessToken as string | undefined;
+if (!token) {
+  setError("Login gagal: token tidak ditemukan");
+  return;
+}
 
-      router.replace(callbackUrl);
-      router.refresh();
+// Store token for client-side API calls.
+localStorage.setItem("accessToken", token);
+
+// If callbackUrl is root, send user to dashboard by default.
+const dest = callbackUrl && callbackUrl !== "/" ? callbackUrl : "/dashboard";
+router.replace(dest);
+router.refresh();
+
     } catch (err: any) {
       setError(err?.message || "Login gagal");
     } finally {
