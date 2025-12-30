@@ -1,6 +1,7 @@
 "use client";
 
 import { ThemeToggleSwitch } from "@/components/Layouts/header/theme-toggle";
+import { apiFetch } from "@/lib/client";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -40,9 +41,12 @@ export default function ChangePasswordClient() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/change-password", {
+      // Use apiFetch so we reliably send either:
+      // - Authorization: Bearer <token> (from localStorage)
+      // - and cookies (same-origin)
+      // This prevents "mustChangePassword" staying true if the cookie isn't available yet.
+      const res = await apiFetch("/api/auth/change-password", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currentPassword, newPassword }),
       });
 
