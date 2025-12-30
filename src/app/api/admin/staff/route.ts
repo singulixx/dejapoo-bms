@@ -44,3 +44,27 @@ export async function POST(req: Request) {
 
   return Response.json({ ok: true, username, role: "STAFF", password, recoveryKey });
 }
+
+/**
+ * OWNER lists STAFF accounts.
+ */
+export async function GET(req: Request) {
+  const auth = requireOwner(req);
+  if (!auth.ok) return auth.res;
+
+  const users = await prisma.user.findMany({
+    where: { role: "STAFF" },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      username: true,
+      role: true,
+      isActive: true,
+      mustChangePassword: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return Response.json({ ok: true, users });
+}

@@ -8,12 +8,26 @@ type CreateStaffResult =
   | { ok: true; username: string; role: string; password: string; recoveryKey: string }
   | { message: string };
 
+type StaffUser = {
+  id: string;
+  username: string;
+  role: string;
+  isActive: boolean;
+  mustChangePassword: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type ListStaffResult = { ok: true; users: StaffUser[] } | { message: string };
+
 export default function UsersPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingList, setLoadingList] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<null | { username: string; password: string; recoveryKey: string }>(null);
+  const [staff, setStaff] = useState<StaffUser[]>([]);
 
   useEffect(() => {
     // UI gate: only OWNER can access Users page.
@@ -25,11 +39,31 @@ export default function UsersPage() {
         }
         const data = (await r.json().catch(() => null)) as any;
         const role = String(data?.user?.role ?? "").trim().toUpperCase();
-        if (role !== "OWNER") router.replace("/dashboard");
+        if (role !== "OWNER") {
+          router.replace("/dashboard");
+          return;
+        }
+
+        // Load staff list after role confirmed.
+        void loadStaff();
       })
       .catch(() => router.replace("/dashboard"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function loadStaff() {
+    setLoadingList(true);
+    try {
+      const res = await apiFetch("/api/admin/staff");
+      const data = (await res.json().catch(() => ({}))) as ListStaffResult;
+      if (!res.ok) throw new Error((data as any)?.message || "Gagal memuat daftar staff");
+      setStaff(Array.isArray((data as any)?.users) ? (data as any).users : []);
+    } catch (err: any) {
+      setError(err?.message || "Gagal memuat daftar staff");
+    } finally {
+      setLoadingList(false);
+    }
+  }
 
   async function onCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -58,12 +92,21 @@ export default function UsersPage() {
         recoveryKey: (data as any).recoveryKey,
       });
       setUsername("");
+      void loadStaff();
     } catch (err: any) {
       setError(err?.message || "Terjadi kesalahan");
     } finally {
       setLoading(false);
     }
   }
+
+  const fmt = new Intl.DateTimeFormat("id-ID", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   async function copy(text: string) {
     try {
@@ -177,6 +220,76 @@ export default function UsersPage() {
           </div>
         </div>
       )}
+
+      <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm dark:border-dark-3 dark:bg-dark-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-dark dark:text-white">Daftar Staff</h2>
+            <p className="mt-1 text-sm text-dark-6">Total: {staff.length}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => loadStaff()}
+            disabled={loadingList}
+            className="w-full rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-dark hover:bg-gray-2 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto dark:border-dark-3 dark:text-white dark:hover:bg-dark-3/40"
+          >
+            {loadingList ? "Memuat..." : "Refresh"}
+          </button>
+        </div>
+
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[720px] text-sm">
+            <thead>
+              <tr className="text-left text-dark-6">
+                <th className="py-2">Username</th>
+                <th className="py-2">Status</th>
+                <th className="py-2">Wajib Ganti Password</th>
+                <th className="py-2">Dibuat</th>
+                <th className="py-2">Update</th>
+              </tr>
+            </thead>
+            <tbody>
+              {staff.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-6 text-center text-dark-6">
+                    {loadingList ? "Memuat..." : "Belum ada akun staff."}
+                  </td>
+                </tr>
+              ) : (
+                staff.map((u) => (
+                  <tr key={u.id} className="border-t border-border/60 dark:border-dark-3">
+                    <td className="py-3 font-mono text-dark dark:text-white">{u.username}</td>
+                    <td className="py-3">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          u.isActive
+                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-200"
+                            : "bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-200"
+                        }`}
+                      >
+                        {u.isActive ? "Aktif" : "Nonaktif"}
+                      </span>
+                    </td>
+                    <td className="py-3">
+                      {u.mustChangePassword ? (
+                        <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-950/30 dark:text-amber-200">
+                          Ya
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-gray-2 px-2.5 py-1 text-xs font-semibold text-dark-6 dark:bg-dark-3/40 dark:text-white/70">
+                          Tidak
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 text-dark-6">{fmt.format(new Date(u.createdAt))}</td>
+                    <td className="py-3 text-dark-6">{fmt.format(new Date(u.updatedAt))}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
