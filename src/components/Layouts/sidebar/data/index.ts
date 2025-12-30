@@ -84,7 +84,4 @@ export const NAV_DATA = [
         icon: Icons.Authentication,
         items: [{ title: "Aktivitas", url: "/audit-logs" }],
       },
-    ],
-  },
-
 ];
