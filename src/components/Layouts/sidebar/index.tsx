@@ -22,14 +22,24 @@ export function Sidebar() {
     const upperRole = String(role ?? "").trim().toUpperCase();
 
     return NAV_DATA.map((section) => {
-      const items = section.items.filter((item) => {
-        // Only OWNER can see "Pengguna" menu.
-        if (item.title === "Pengguna") return upperRole === "OWNER";
-        return true;
-      });
+      const items = section.items
+        .map((item) => {
+          // Only OWNER can see user-management entry ("/users") under Akun.
+          if (item.title === "Akun" && Array.isArray(item.items)) {
+            const subItems = item.items.filter((sub) => {
+              if (sub.url === "/users") return upperRole === "OWNER";
+              return true;
+            });
+            return { ...item, items: subItems };
+          }
+          return item;
+        })
+        .filter((item) => (Array.isArray(item.items) ? item.items.length > 0 : true));
+
       return { ...section, items };
     }).filter((section) => section.items.length > 0);
   }, [role]);
+
 
   const toggleExpanded = (title: string) => {
     setExpandedItems((prev) => (prev.includes(title) ? [] : [title]));
