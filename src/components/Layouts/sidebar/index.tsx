@@ -24,13 +24,13 @@ export function Sidebar() {
     return NAV_DATA.map((section) => {
       const items = section.items
         .map((item) => {
-          // Only OWNER can see user-management entry ("/users") under Akun.
-          if (item.title === "Akun" && "items" in item && Array.isArray(item.items)) {
-            const subItems = item.items.filter((sub) => {
+          // Only OWNER can see user-management entry ("/users").
+          if ("items" in item && Array.isArray((item as any).items)) {
+            const subItems = (item as any).items.filter((sub: any) => {
               if (sub.url === "/users") return upperRole === "OWNER";
               return true;
             });
-            return { ...item, items: subItems };
+            return { ...(item as any), items: subItems };
           }
           return item;
         })
