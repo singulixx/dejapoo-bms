@@ -57,15 +57,6 @@ export const NAV_DATA = [
     items: [
 
       {
-        title: "Akun",
-        icon: Icons.User,
-        items: [
-          { title: "Ganti Password", url: "/account" },
-          { title: "Pengguna", url: "/users" },
-        ],
-      },
-
-      {
         title: "Audit Logs",
         icon: Icons.Authentication,
         items: [{ title: "Aktivitas", url: "/audit-logs" }],
