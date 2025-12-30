@@ -161,6 +161,26 @@ export default function IntegrationsPage() {
             </div>
           </div>
         </div>
+
+        {channel === "SHOPEE" ? (
+          <div className="mt-4 rounded-xl border border-stroke dark:border-white/10 p-3">
+            <div className="text-sm font-semibold">Shopee OAuth (Production)</div>
+            <div className="mt-1 text-xs text-dark-6 dark:text-white/40">
+              Pastikan env <span className="font-mono">SHOPEE_PARTNER_ID</span>, <span className="font-mono">SHOPEE_PARTNER_KEY</span>, dan <span className="font-mono">SHOPEE_REDIRECT_URL</span> sudah di-set.
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => window.open(`/api/integrations/shopee/connect`, "_blank")}
+                className="rounded-xl bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary/90"
+              >
+                Connect Shopee
+              </button>
+              <div className="text-xs text-dark-6 dark:text-white/40">
+                Akan membuka halaman otorisasi Shopee, lalu kembali ke aplikasi.
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {tab === "events" ? (

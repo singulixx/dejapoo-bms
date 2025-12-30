@@ -48,8 +48,29 @@ And voila! You're now ready to start developing. **Happy coding**!
 
 - `DATABASE_URL` (PostgreSQL)
 - `ADMIN_USERNAME` / `ADMIN_PASSWORD` (bootstrap admin)
+- `JWT_SECRET` (session)
+- `MARKETPLACE_SECRET` (optional encryption key for marketplace credentials/tokens)
 - `WEBHOOK_SECRET_SHOPEE` (header `x-webhook-secret`)
 - `WEBHOOK_SECRET_TIKTOK` (header `x-webhook-secret`)
+
+### Shopee OAuth (API v2)
+
+After your Shopee app is approved (production), set:
+
+- `SHOPEE_PARTNER_ID`
+- `SHOPEE_PARTNER_KEY`
+- `SHOPEE_HOST` (default `partner.shopeemobile.com`)
+- `SHOPEE_REDIRECT_URL` (FULL callback URL, must be under your **Live Redirect URL Domain**)
+- (optional) `APP_BASE_URL` (where to redirect after successful OAuth)
+
+Start OAuth (must be logged in as OWNER/ADMIN):
+- `GET /api/integrations/shopee/connect`
+
+Callback (set in env `SHOPEE_REDIRECT_URL`):
+- `GET /api/integrations/shopee/callback`
+
+Sync orders (protected, ready for Vercel Cron):
+- `POST /api/cron/shopee/orders` with optional JSON body `{ "hours": 24 }`
 
 ## Webhook Endpoints (for Vercel)
 
