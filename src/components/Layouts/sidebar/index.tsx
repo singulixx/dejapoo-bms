@@ -11,34 +11,45 @@ import { MenuItem } from "./menu-item";
 import { useSidebarContext } from "./sidebar-context";
 import { apiFetch } from "@/lib/client";
 
+// Sidebar nav typing helpers (prevents implicit-any in strict builds)
+type NavSubItem = { title: string; url: string };
+type NavItem = {
+  title: string;
+  // Icons are React components; keep broad to avoid importing icon prop types here.
+  icon?: unknown;
+  items: NavSubItem[];
+};
+type NavSection = { label: string; items: NavItem[] };
+
 export function Sidebar() {
   const pathname = usePathname();
   const { setIsOpen, isOpen, isMobile, toggleSidebar } = useSidebarContext();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [role, setRole] = useState<string | null>(null);
 
+  const navData = NAV_DATA as unknown as NavSection[];
+
   // Hide privileged menus by default until role is known.
-  const filteredNavData = useMemo(() => {
+  const filteredNavData = useMemo<NavSection[]>(() => {
     const upperRole = String(role ?? "").trim().toUpperCase();
 
-    return NAV_DATA.map((section) => {
-      const items = section.items
-        .map((item) => {
-          // Only OWNER can see user-management entry ("/users").
-          if ("items" in item && Array.isArray((item as any).items)) {
-            const subItems = (item as any).items.filter((sub: any) => {
+    return navData
+      .map((section) => {
+        const items = section.items
+          .map((item) => {
+            // Only OWNER can see user-management entry ("/users").
+            const subItems = item.items.filter((sub) => {
               if (sub.url === "/users") return upperRole === "OWNER";
               return true;
             });
-            return { ...(item as any), items: subItems };
-          }
-          return item;
-        })
-        .filter((item) => (("items" in item && Array.isArray(item.items)) ? item.items.length > 0 : true));
+            return { ...item, items: subItems };
+          })
+          .filter((item) => item.items.length > 0);
 
-      return { ...section, items };
-    }).filter((section) => section.items.length > 0);
-  }, [role]);
+        return { ...section, items };
+      })
+      .filter((section) => section.items.length > 0);
+  }, [role, navData]);
 
 
   const toggleExpanded = (title: string) => {
@@ -68,20 +79,20 @@ export function Sidebar() {
 
   useEffect(() => {
     // Keep collapsible open, when it's subpage is active
-    filteredNavData.some((section) => {
-      return section.items.some((item) => {
-        return item.items.some((subItem) => {
-          if (subItem.url === pathname) {
-            if (!expandedItems.includes(item.title)) {
-              toggleExpanded(item.title);
-            }
+    filteredNavData.some((section) =>
+      section.items.some((item) =>
+        item.items.some((subItem) => {
+          if (subItem.url !== pathname) return false;
 
-            // Break the loop
-            return true;
+          if (!expandedItems.includes(item.title)) {
+            toggleExpanded(item.title);
           }
-        });
-      });
-    });
+
+          // Break the loop
+          return true;
+        }),
+      ),
+    );
   }, [pathname, filteredNavData]);
 
   return (
