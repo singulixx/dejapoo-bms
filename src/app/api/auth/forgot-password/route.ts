@@ -14,7 +14,7 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as { username?: string; recoveryKey?: string } | null;
   const username = body?.username?.trim();
-  const recoveryKey = body?.recoveryKey;
+  const recoveryKey = body?.recoveryKey?.trim();
 
   if (!username || !recoveryKey) {
     return Response.json({ message: "Username dan recovery key wajib diisi" }, { status: 400 });
