@@ -105,6 +105,7 @@ export default function AccountSettingsClient() {
             </label>
             <input
               value={me?.user.username || ""}
+              placeholder="Username"
               disabled
               className="w-full rounded-lg border border-stroke bg-gray-2 px-4 py-2 text-dark outline-none dark:border-dark-3 dark:bg-dark-2 dark:text-white"
             />
@@ -115,6 +116,7 @@ export default function AccountSettingsClient() {
             </label>
             <input
               value={me?.user.role || ""}
+              placeholder="Role"
               disabled
               className="w-full rounded-lg border border-stroke bg-gray-2 px-4 py-2 text-dark outline-none dark:border-dark-3 dark:bg-dark-2 dark:text-white"
             />
@@ -134,6 +136,7 @@ export default function AccountSettingsClient() {
             </label>
             <input
               type="password"
+              placeholder="Masukkan password lama"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               className="w-full rounded-lg border border-stroke bg-gray-2 px-4 py-2 text-dark outline-none focus:border-primary dark:border-dark-3 dark:bg-dark-2 dark:text-white"
@@ -147,6 +150,7 @@ export default function AccountSettingsClient() {
               </label>
               <input
                 type="password"
+                placeholder="Minimal 6 karakter"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="w-full rounded-lg border border-stroke bg-gray-2 px-4 py-2 text-dark outline-none focus:border-primary dark:border-dark-3 dark:bg-dark-2 dark:text-white"
@@ -158,6 +162,7 @@ export default function AccountSettingsClient() {
               </label>
               <input
                 type="password"
+                placeholder="Ulangi password baru"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full rounded-lg border border-stroke bg-gray-2 px-4 py-2 text-dark outline-none focus:border-primary dark:border-dark-3 dark:bg-dark-2 dark:text-white"
