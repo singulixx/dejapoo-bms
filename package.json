@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build && node scripts/vercel-fix-trace.mjs",
+    "postinstall": "prisma generate",
     "start": "next start",
     "lint": "next lint",
     "create-admin": "node scripts/create-admin.mjs",
