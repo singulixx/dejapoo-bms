@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import type { ElementType } from "react";
 import { NAV_DATA } from "./data";
 import { ArrowLeftIcon, ChevronUp } from "./icons";
 import { MenuItem } from "./menu-item";
@@ -15,8 +16,8 @@ import { apiFetch } from "@/lib/client";
 type NavSubItem = { title: string; url: string };
 type NavItem = {
   title: string;
-  // Icons are React components; keep broad to avoid importing icon prop types here.
-  icon?: unknown;
+  // Icons are React components (lucide-react style)
+  icon?: ElementType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
   items: NavSubItem[];
 };
 type NavSection = { label: string; items: NavItem[] };
@@ -158,10 +159,17 @@ export function Sidebar() {
                               )}
                               onClick={() => toggleExpanded(item.title)}
                             >
-                              <item.icon
-                                className="size-6 shrink-0"
-                                aria-hidden="true"
-                              />
+                              {item.icon ? (
+                                (() => {
+                                  const Icon = item.icon;
+                                  return (
+                                    <Icon
+                                      className="size-6 shrink-0"
+                                      aria-hidden="true"
+                                    />
+                                  );
+                                })()
+                              ) : null}
 
                               <span>{item.title}</span>
 
@@ -209,10 +217,17 @@ export function Sidebar() {
                                 href={href}
                                 isActive={pathname === href}
                               >
-                                <item.icon
-                                  className="size-6 shrink-0"
-                                  aria-hidden="true"
-                                />
+                                {item.icon ? (
+                                  (() => {
+                                    const Icon = item.icon;
+                                    return (
+                                      <Icon
+                                        className="size-6 shrink-0"
+                                        aria-hidden="true"
+                                      />
+                                    );
+                                  })()
+                                ) : null}
 
                                 <span>{item.title}</span>
                               </MenuItem>
