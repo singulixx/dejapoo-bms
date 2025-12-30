@@ -4,16 +4,32 @@ import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NAV_DATA } from "./data";
 import { ArrowLeftIcon, ChevronUp } from "./icons";
 import { MenuItem } from "./menu-item";
 import { useSidebarContext } from "./sidebar-context";
+import { apiFetch } from "@/lib/client";
 
 export function Sidebar() {
   const pathname = usePathname();
   const { setIsOpen, isOpen, isMobile, toggleSidebar } = useSidebarContext();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [role, setRole] = useState<string | null>(null);
+
+  // Hide privileged menus by default until role is known.
+  const filteredNavData = useMemo(() => {
+    const upperRole = String(role ?? "").trim().toUpperCase();
+
+    return NAV_DATA.map((section) => {
+      const items = section.items.filter((item) => {
+        // Only OWNER can see "Pengguna" menu.
+        if (item.title === "Pengguna") return upperRole === "OWNER";
+        return true;
+      });
+      return { ...section, items };
+    }).filter((section) => section.items.length > 0);
+  }, [role]);
 
   const toggleExpanded = (title: string) => {
     setExpandedItems((prev) => (prev.includes(title) ? [] : [title]));
@@ -25,8 +41,24 @@ export function Sidebar() {
   };
 
   useEffect(() => {
+    // Fetch current user role for menu authorization.
+    // (Use AuthGate for login redirect; here we only need role for UI.)
+    apiFetch("/api/auth/me")
+      .then(async (r) => {
+        if (!r.ok) {
+          setRole(null);
+          return;
+        }
+        const data = (await r.json().catch(() => null)) as any;
+        setRole((data?.user?.role ?? "") + "");
+      })
+      .catch(() => setRole(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     // Keep collapsible open, when it's subpage is active
-    NAV_DATA.some((section) => {
+    filteredNavData.some((section) => {
       return section.items.some((item) => {
         return item.items.some((subItem) => {
           if (subItem.url === pathname) {
@@ -40,7 +72,7 @@ export function Sidebar() {
         });
       });
     });
-  }, [pathname]);
+  }, [pathname, filteredNavData]);
 
   return (
     <>
@@ -87,7 +119,7 @@ export function Sidebar() {
 
           {/* Navigation */}
           <div className="custom-scrollbar mt-6 flex-1 overflow-y-auto pr-3 min-[850px]:mt-10">
-            {NAV_DATA.map((section) => (
+            {filteredNavData.map((section) => (
               <div key={section.label} className="mb-6">
                 <h2 className="mb-5 text-sm font-medium text-dark-4 dark:text-dark-6">
                   {section.label}

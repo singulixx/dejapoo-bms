@@ -1,17 +1,17 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth";
 import { generateInitialPassword, generateRecoveryKey } from "@/lib/password";
 
 /**
- * OWNER/ADMIN creates STAFF account.
+ * OWNER creates STAFF account.
  * Returns the generated password + recoveryKey ONCE (show it and store it securely).
  *
  * POST body:
  *  { username: string }
  */
 export async function POST(req: Request) {
-  const auth = requireAdmin(req);
+  const auth = requireOwner(req);
   if (!auth.ok) return auth.res;
 
   const body = (await req.json().catch(() => null)) as { username?: string } | null;

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { Prisma } from "@prisma/client";
 
 function startOfDay(d: Date) {
@@ -23,7 +23,8 @@ function startOfNDaysAgo(d: Date, days: number) {
 }
 
 export async function GET(req: Request) {
-  const auth = requireAdmin(req);
+  // Dashboard is accessible to any authenticated user (OWNER/ADMIN/STAFF/etc.).
+  const auth = requireAuth(req);
   if (!auth.ok) return auth.res;
 
   const now = new Date();

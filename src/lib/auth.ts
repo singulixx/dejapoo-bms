@@ -98,3 +98,13 @@ export function requireAdmin(req: Request) {
   }
   return auth;
 }
+
+export function requireOwner(req: Request) {
+  const auth = requireAuth(req);
+  if (!auth.ok) return auth;
+  const role = String(auth.user.role ?? "").trim().toUpperCase();
+  if (role !== "OWNER") {
+    return { ok: false as const, res: NextResponse.json({ message: "Forbidden" }, { status: 403 }) };
+  }
+  return auth;
+}

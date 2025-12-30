@@ -1,17 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/client";
+import { useRouter } from "next/navigation";
 
 type CreateStaffResult =
   | { ok: true; username: string; role: string; password: string; recoveryKey: string }
   | { message: string };
 
 export default function UsersPage() {
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<null | { username: string; password: string; recoveryKey: string }>(null);
+
+  useEffect(() => {
+    // UI gate: only OWNER can access Users page.
+    apiFetch("/api/auth/me")
+      .then(async (r) => {
+        if (!r.ok) {
+          router.replace("/dashboard");
+          return;
+        }
+        const data = (await r.json().catch(() => null)) as any;
+        const role = String(data?.user?.role ?? "").trim().toUpperCase();
+        if (role !== "OWNER") router.replace("/dashboard");
+      })
+      .catch(() => router.replace("/dashboard"));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function onCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -60,7 +78,7 @@ export default function UsersPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-dark dark:text-white">Manajemen Staff</h1>
         <p className="mt-1 text-sm text-dark-6">
-          Hanya <b>OWNER/ADMIN</b> yang bisa membuat akun STAFF. Password &amp; Recovery Key akan ditampilkan <b>sekali</b>.
+          Hanya <b>OWNER</b> yang bisa membuat akun STAFF. Password &amp; Recovery Key akan ditampilkan <b>sekali</b>.
         </p>
       </div>
 
