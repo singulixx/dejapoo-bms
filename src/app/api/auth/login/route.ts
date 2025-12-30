@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   });
 
   // Also set an HttpOnly cookie so Next.js middleware (server-side) can detect auth.
-  const res = NextResponse.json({ accessToken });
+  const res = NextResponse.json({ accessToken, mustChangePassword: user.mustChangePassword });
   res.cookies.set({
     name: "accessToken",
     value: accessToken,

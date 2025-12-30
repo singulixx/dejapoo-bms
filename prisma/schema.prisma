@@ -9,6 +9,8 @@ datasource db {
 }
 
 enum UserRole {
+  OWNER
+  STAFF
   ADMIN
 }
 
@@ -64,11 +66,13 @@ enum OrderSource {
 model User {
   id           String   @id @default(cuid())
   username     String   @unique
-  passwordHash String
+  passwordHash      String
+  recoveryKeyHash  String?
+  mustChangePassword Boolean @default(false)
   isActive     Boolean  @default(true)
   // role diperlukan untuk authorization (admin guard)
   // di MySQL kamu kolomnya bernama `role` (VARCHAR)
-  role         String   @default("ADMIN")
+  role         String   @default("STAFF")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

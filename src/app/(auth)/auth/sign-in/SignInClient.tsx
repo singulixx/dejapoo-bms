@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 type LoginResult =
-  | { accessToken: string }
+  | { accessToken: string; mustChangePassword?: boolean }
   | { message: string };
 
 export default function SignInClient() {
@@ -40,7 +40,11 @@ export default function SignInClient() {
       // Store token for client-side API calls. (Server routes can also read HttpOnly cookie.)
       localStorage.setItem("accessToken", data.accessToken);
 
-      router.replace(callbackUrl);
+      if ((data as any).mustChangePassword) {
+        router.replace(`/auth/change-password?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+      } else {
+        router.replace(callbackUrl);
+      }
       router.refresh();
     } catch (err: any) {
       setError(err?.message || "Login gagal");
@@ -229,9 +233,15 @@ export default function SignInClient() {
                   <span className="relative font-medium">{loading ? "Signing in..." : "Sign in"}</span>
                 </button>
 
-                <p className="pt-2 text-center text-body-xs text-dark-6">
-                  Tips: gunakan tombol di pojok kanan atas untuk switch night / light mode.
-                </p>
+                <div className="pt-3 text-center text-sm">
+  <a href="/auth/forgot-password" className="text-primary hover:underline">
+    Lupa password?
+  </a>
+</div>
+
+<p className="pt-2 text-center text-body-xs text-dark-6">
+  Tips: gunakan tombol di pojok kanan atas untuk switch night / light mode.
+</p>
               </form>
             </div>
           </div>
