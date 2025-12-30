@@ -25,7 +25,7 @@ export function Sidebar() {
       const items = section.items
         .map((item) => {
           // Only OWNER can see user-management entry ("/users") under Akun.
-          if (item.title === "Akun" && Array.isArray(item.items)) {
+          if (item.title === "Akun" && "items" in item && Array.isArray(item.items)) {
             const subItems = item.items.filter((sub) => {
               if (sub.url === "/users") return upperRole === "OWNER";
               return true;
@@ -34,7 +34,7 @@ export function Sidebar() {
           }
           return item;
         })
-        .filter((item) => (Array.isArray(item.items) ? item.items.length > 0 : true));
+        .filter((item) => (("items" in item && Array.isArray(item.items)) ? item.items.length > 0 : true));
 
       return { ...section, items };
     }).filter((section) => section.items.length > 0);

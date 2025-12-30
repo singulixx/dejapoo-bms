@@ -71,17 +71,5 @@ export const NAV_DATA = [
         items: [{ title: "Aktivitas", url: "/audit-logs" }],
       },
     ],
-      },
-
-      {
-        title: "Pengguna",
-        icon: Icons.User,
-        items: [{ title: "Staff", url: "/users" }],
-      },
-
-      {
-        title: "Audit Logs",
-        icon: Icons.Authentication,
-        items: [{ title: "Aktivitas", url: "/audit-logs" }],
-      },
+  },
 ];
