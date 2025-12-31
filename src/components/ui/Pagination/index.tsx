@@ -2,7 +2,7 @@
 
 import React from "react";
 
-type Props = {
+export type PaginationProps = {
   page: number;
   pageSize: number;
   total: number;
@@ -11,7 +11,7 @@ type Props = {
   className?: string;
 };
 
-export function Pagination({ page, pageSize, total, onPageChange, disabled, className }: Props) {
+export function Pagination({ page, pageSize, total, onPageChange, disabled, className }: PaginationProps) {
   const totalPages = Math.max(1, Math.ceil((total || 0) / Math.max(1, pageSize || 1)));
   const safePage = Math.min(Math.max(1, page || 1), totalPages);
 

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/client";
 
-import { Pagination } from "@/components/ui/Pagination";
+import Pagination from "@/components/ui/Pagination";
 type AuditLog = {
   id: string;
   createdAt: string;

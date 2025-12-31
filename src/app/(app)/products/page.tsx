@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { apiFetch } from "@/lib/client";
-import { Pagination } from "@/components/ui/Pagination";
+import Pagination from "@/components/ui/Pagination";
 import CurrencyInput from "@/components/FormElements/CurrencyInput";
 import { formatRupiah, parseRupiah } from "@/lib/rupiah";
 import { useNotify } from "@/components/ui/notify";
