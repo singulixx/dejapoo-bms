@@ -2,6 +2,8 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   const auth = requireAuth(req);
   if (!auth.ok) return auth.res;

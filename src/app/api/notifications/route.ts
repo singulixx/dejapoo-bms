@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
   const auth = requireAuth(req);
   if (!auth.ok) return auth.res;
@@ -27,5 +29,5 @@ export async function GET(req: Request) {
     },
   });
 
-  return NextResponse.json({ items, unreadCount });
+  return NextResponse.json({ items, unreadCount }, { headers: { "Cache-Control": "no-store" } });
 }

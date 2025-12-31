@@ -4,6 +4,8 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
+export const dynamic = 'force-dynamic';
+
 const UpdateSchema = z.object({
   name: z.string().min(1).optional(),
   isActive: z.boolean().optional(),
@@ -39,9 +41,9 @@ export async function GET(req: Request, { params }: Ctx) {
   const { id } = await params;
 
   const acc = await prisma.marketplaceAccount.findUnique({ where: { id } });
-  if (!acc) return NextResponse.json({ message: "Account not found" }, { status: 404 });
+  if (!acc) return NextResponse.json({ message: "Account not found" }, { headers: { "Cache-Control": "no-store" }, status: 404 });
 
-  return NextResponse.json(acc);
+  return NextResponse.json(acc, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function PUT(req: Request, { params }: Ctx) {
@@ -54,10 +56,7 @@ export async function PUT(req: Request, { params }: Ctx) {
   const parsed = UpdateSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json(
-      { message: "Invalid payload", errors: parsed.error.flatten() },
-      { status: 400 }
-    );
+    return NextResponse.json({ message: "Invalid payload", errors: parsed.error.flatten() }, { headers: { "Cache-Control": "no-store" }, status: 400 });
   }
 
   const data: Record<string, unknown> = { ...parsed.data };
@@ -72,7 +71,7 @@ export async function PUT(req: Request, { params }: Ctx) {
     data: data as any,
   });
 
-  return NextResponse.json({ ok: true, id: updated.id });
+  return NextResponse.json({ ok: true, id: updated.id }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function DELETE(req: Request, { params }: Ctx) {
@@ -86,5 +85,5 @@ export async function DELETE(req: Request, { params }: Ctx) {
     data: { isActive: false },
   });
 
-  return NextResponse.json({ ok: true, id: updated.id });
+  return NextResponse.json({ ok: true, id: updated.id }, { headers: { "Cache-Control": "no-store" } });
 }

@@ -4,6 +4,8 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
+export const dynamic = 'force-dynamic';
+
 const CreateSchema = z.object({
   channel: z.enum(["SHOPEE", "TIKTOK"]),
   name: z.string().optional().nullable(),
@@ -28,7 +30,7 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => null);
   const parsed = CreateSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ message: "Invalid payload", issues: parsed.error.issues }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ message: "Invalid payload", issues: parsed.error.issues }, { headers: { "Cache-Control": "no-store" }, status: 400 });
 
   const account = await prisma.marketplaceAccount.create({
     data: {
@@ -39,7 +41,7 @@ export async function POST(req: Request) {
     },
   });
 
-  return NextResponse.json(account, { status: 201 });
+  return NextResponse.json(account, { headers: { "Cache-Control": "no-store" }, status: 201 });
 }
 
 export async function GET(req: Request) {
@@ -51,5 +53,5 @@ export async function GET(req: Request) {
     orderBy: [{ channel: "asc" }, { createdAt: "desc" }],
     select: { id: true, channel: true, name: true, isActive: true, createdAt: true, updatedAt: true },
   });
-  return NextResponse.json({ items });
+  return NextResponse.json({ items }, { headers: { "Cache-Control": "no-store" } });
 }

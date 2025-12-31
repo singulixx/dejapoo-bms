@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { decryptJson, encryptJson } from "@/lib/crypto";
 import { refreshToken, shopeeAuthedGet } from "@/lib/shopee";
 
+export const dynamic = 'force-dynamic';
+
 type StoredCreds = { shop_id: number; merchant_id?: number | null };
 
 function toUnixSeconds(d: Date) {
@@ -64,7 +66,7 @@ export async function POST(req: Request) {
   const start = new Date(Date.now() - lookbackHours * 60 * 60 * 1000);
 
   const accounts = await prisma.marketplaceAccount.findMany({ where: { channel: "SHOPEE", isActive: true } });
-  if (!accounts.length) return NextResponse.json({ ok: true, message: "No active Shopee accounts" });
+  if (!accounts.length) return NextResponse.json({ ok: true, message: "No active Shopee accounts" }, { headers: { "Cache-Control": "no-store" } });
 
   const outlet = await getOrCreateWarehouse();
   const results: any[] = [];
@@ -214,5 +216,5 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, range: { hours: lookbackHours }, results });
+  return NextResponse.json({ ok: true, range: { hours: lookbackHours }, results }, { headers: { "Cache-Control": "no-store" } });
 }

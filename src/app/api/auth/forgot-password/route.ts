@@ -2,6 +2,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Forgot password WITHOUT email.
  * Flow:

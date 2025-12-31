@@ -5,6 +5,8 @@ import { requireAdmin } from "@/lib/auth";
 import { requestContext } from "@/lib/request-context";
 import { writeAuditLog } from "@/lib/audit";
 
+export const dynamic = 'force-dynamic';
+
 const CreateProduct = z.object({
   name: z.string().min(1),
   code: z.string().min(1).optional().nullable(),
@@ -27,7 +29,7 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const parsed = CreateProduct.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ message: "Invalid payload", issues: parsed.error.issues }, { status: 400 });
+    return NextResponse.json({ message: "Invalid payload", issues: parsed.error.issues }, { headers: { "Cache-Control": "no-store" }, status: 400 });
   }
 
   const sizes = ["S", "M", "L", "XL", "XXL"] as const;
@@ -108,7 +110,7 @@ if (created?.id) {
   });
 }
 
-return NextResponse.json(created, { status: 201 });
+return NextResponse.json(created, { headers: { "Cache-Control": "no-store" }, status: 201 });
   });
 }
 
@@ -146,5 +148,5 @@ export async function GET(req: Request) {
   return NextResponse.json({
     items,
     pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
-  });
+  }, { headers: { "Cache-Control": "no-store" } });
 }

@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
+export const dynamic = 'force-dynamic';
+
 // ExcelJS needs Node.js runtime (not Edge)
 export const runtime = "nodejs";
 
@@ -45,6 +47,7 @@ export async function GET(req: Request) {
     return new NextResponse(Buffer.from(buf), {
       status: 200,
       headers: {
+        "Cache-Control": "no-store",
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": `attachment; filename="stock-report.xlsx"`,
       },
@@ -56,11 +59,12 @@ export async function GET(req: Request) {
     const lines = [header.join(","), ...data.map(d => header.map(k => JSON.stringify((d as any)[k] ?? "")).join(","))];
     return new NextResponse(lines.join("\n"), {
       headers: {
+        "Cache-Control": "no-store",
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": "attachment; filename=stock_report.csv",
       },
     });
   }
 
-  return NextResponse.json({ items: data });
+  return NextResponse.json({ items: data }, { headers: { "Cache-Control": "no-store" } });
 }

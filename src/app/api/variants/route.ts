@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
+export const dynamic = 'force-dynamic';
+
 const SizeEnum = z.enum(["S", "M", "L", "XL", "XXL"]);
 
 const CreateVariant = z.object({
@@ -22,10 +24,10 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => null);
   const parsed = CreateVariant.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ message: "Invalid payload", issues: parsed.error.issues }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ message: "Invalid payload", issues: parsed.error.issues }, { headers: { "Cache-Control": "no-store" }, status: 400 });
 
   const product = await prisma.product.findFirst({ where: { id: parsed.data.productId, deletedAt: null } });
-  if (!product) return NextResponse.json({ message: "Product not found" }, { status: 404 });
+  if (!product) return NextResponse.json({ message: "Product not found" }, { headers: { "Cache-Control": "no-store" }, status: 404 });
 
   const created = await prisma.productVariant.create({
     data: {
@@ -39,7 +41,7 @@ export async function POST(req: Request) {
     },
   });
 
-  return NextResponse.json(created, { status: 201 });
+  return NextResponse.json(created, { headers: { "Cache-Control": "no-store" }, status: 201 });
 }
 
 export async function GET(req: Request) {
@@ -80,5 +82,5 @@ export async function GET(req: Request) {
     }),
   ]);
 
-  return NextResponse.json({ items, pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) } });
+  return NextResponse.json({ items, pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) } }, { headers: { "Cache-Control": "no-store" } });
 }

@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { Prisma } from "@prisma/client";
 
+export const dynamic = 'force-dynamic';
+
 function startOfDay(d: Date) {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
@@ -222,5 +224,5 @@ export async function GET(req: Request) {
       daily: trendByDay,
     },
     outletPerformance30d: outletPerf,
-  });
+  }, { headers: { "Cache-Control": "no-store" } });
 }

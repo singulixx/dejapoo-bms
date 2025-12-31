@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
+export const dynamic = 'force-dynamic';
+
 const BodySchema = z.object({
   outletId: z.string().min(1).optional(),
   supplier: z.string().optional(),
@@ -25,7 +27,7 @@ export async function POST(req: Request) {
   const auth = requireAdmin(req);
   if (!auth.ok) return auth.res;
 const parsed = BodySchema.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
 
   const { items, supplier, note } = parsed.data;
 const date = parsed.data.date ? new Date(parsed.data.date) : new Date();
@@ -47,7 +49,7 @@ if (!outletId) {
   }));
 
   if (normalizedItems.some((x) => !x.variantId)) {
-    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid input" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
   }
 
   const result = await prisma.$transaction(async (tx) => {
@@ -86,5 +88,5 @@ if (!outletId) {
     return stockIn;
   });
 
-  return NextResponse.json(result, { status: 201 });
+  return NextResponse.json(result, { headers: { "Cache-Control": "no-store" }, status: 201 });
 }

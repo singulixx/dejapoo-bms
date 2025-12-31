@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
   // Riwayat penjualan harus bisa diakses semua role (read-only).
   const auth = requireAuth(req);
@@ -41,5 +43,5 @@ export async function GET(req: Request) {
     prisma.order.count({ where }),
   ]);
 
-  return NextResponse.json({ items, page, pageSize, total });
+  return NextResponse.json({ items, page, pageSize, total }, { headers: { "Cache-Control": "no-store" } });
 }

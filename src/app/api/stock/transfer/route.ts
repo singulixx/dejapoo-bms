@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
+export const dynamic = 'force-dynamic';
+
 const BodySchema = z.object({
   fromOutletId: z.string().min(1),
   toOutletId: z.string().min(1),
@@ -25,10 +27,10 @@ export async function POST(req: Request) {
   const auth = requireAdmin(req);
   if (!auth.ok) return auth.res;
 const parsed = BodySchema.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
 
   const { fromOutletId, toOutletId, items, note } = parsed.data;
-  if (fromOutletId === toOutletId) return NextResponse.json({ error: "Outlet must differ" }, { status: 400 });
+  if (fromOutletId === toOutletId) return NextResponse.json({ error: "Outlet must differ" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
   const date = parsed.data.date ? new Date(parsed.data.date) : new Date();
 
   const normalizedItems = items.map((it) => ({
@@ -36,7 +38,7 @@ const parsed = BodySchema.safeParse(await req.json().catch(() => null));
     qty: it.qty,
   }));
   if (normalizedItems.some((x) => !x.variantId)) {
-    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid input" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
   }
 
   const transfer = await prisma.$transaction(async (tx) => {
@@ -110,8 +112,8 @@ const parsed = BodySchema.safeParse(await req.json().catch(() => null));
   });
 
   if ((transfer as any).__error) {
-    return NextResponse.json(transfer, { status: 400 });
+    return NextResponse.json(transfer, { headers: { "Cache-Control": "no-store" }, status: 400 });
   }
 
-  return NextResponse.json(transfer, { status: 201 });
+  return NextResponse.json(transfer, { headers: { "Cache-Control": "no-store" }, status: 201 });
 }

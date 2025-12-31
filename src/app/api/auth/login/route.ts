@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as { username?: string; password?: string } | null;
   const username = body?.username?.trim();
@@ -27,7 +29,7 @@ export async function POST(req: Request) {
   });
 
   // Also set an HttpOnly cookie so Next.js middleware (server-side) can detect auth.
-  const res = NextResponse.json({ accessToken, mustChangePassword: user.mustChangePassword });
+  const res = NextResponse.json({ accessToken, mustChangePassword: user.mustChangePassword }, { headers: { "Cache-Control": "no-store" } });
   res.cookies.set({
     name: "accessToken",
     value: accessToken,

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = 'force-dynamic';
+
 function sha256(input: string) {
   return crypto.createHash("sha256").update(input).digest("hex");
 }
@@ -48,11 +50,11 @@ export async function POST(req: Request) {
   const secret = process.env.WEBHOOK_SECRET_TIKTOK || "";
   const header = req.headers.get("x-webhook-secret") || "";
   if (!secret || header !== secret) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Unauthorized" }, { headers: { "Cache-Control": "no-store" }, status: 401 });
   }
 
   const payload = await req.json().catch(() => null);
-  if (!payload) return NextResponse.json({ message: "Invalid JSON" }, { status: 400 });
+  if (!payload) return NextResponse.json({ message: "Invalid JSON" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
 
   const raw = JSON.stringify(payload);
   const idempotencyKey = sha256(`TIKTOK:${raw}`);
@@ -60,7 +62,7 @@ export async function POST(req: Request) {
   const externalOrderId = pickExternalOrderId(payload);
   const existing = await prisma.webhookEvent.findUnique({ where: { idempotencyKey } });
   if (existing) {
-    return NextResponse.json({ ok: true, duplicate: true });
+    return NextResponse.json({ ok: true, duplicate: true }, { headers: { "Cache-Control": "no-store" } });
   }
 
   const event = await prisma.webhookEvent.create({
@@ -76,13 +78,13 @@ export async function POST(req: Request) {
 
   if (!externalOrderId) {
     await prisma.webhookEvent.update({ where: { id: event.id }, data: { status: "IGNORED", errorMessage: "Missing externalOrderId" } });
-    return NextResponse.json({ ok: true, status: "IGNORED" });
+    return NextResponse.json({ ok: true, status: "IGNORED" }, { headers: { "Cache-Control": "no-store" } });
   }
 
   const items = normalizeItems(payload);
   if (items.length === 0) {
     await prisma.webhookEvent.update({ where: { id: event.id }, data: { status: "IGNORED", errorMessage: "No items" } });
-    return NextResponse.json({ ok: true, status: "IGNORED" });
+    return NextResponse.json({ ok: true, status: "IGNORED" }, { headers: { "Cache-Control": "no-store" } });
   }
 
   const maps = await prisma.channelSkuMap.findMany({
@@ -95,7 +97,7 @@ export async function POST(req: Request) {
       where: { id: event.id },
       data: { status: "UNMAPPED", errorMessage: `Unmapped SKU: ${missing.map((m) => m.externalSkuId).join(", ")}` },
     });
-    return NextResponse.json({ ok: true, status: "UNMAPPED", missing: missing.map((m) => m.externalSkuId) }, { status: 202 });
+    return NextResponse.json({ ok: true, status: "UNMAPPED", missing: missing.map((m) => m.externalSkuId) }, { headers: { "Cache-Control": "no-store" }, status: 202 });
   }
 
   const outlet = (await prisma.outlet.findFirst({ where: { type: "WAREHOUSE" }, orderBy: { createdAt: "asc" } }))
@@ -111,7 +113,7 @@ export async function POST(req: Request) {
     const current = stock?.qty ?? 0;
     if (current - it.qty < 0) {
       await prisma.webhookEvent.update({ where: { id: event.id }, data: { status: "ERROR", errorMessage: `Insufficient stock for ${it.externalSkuId}` } });
-      return NextResponse.json({ ok: false, message: "Insufficient stock" }, { status: 409 });
+      return NextResponse.json({ ok: false, message: "Insufficient stock" }, { headers: { "Cache-Control": "no-store" }, status: 409 });
     }
   }
 
@@ -160,5 +162,5 @@ export async function POST(req: Request) {
   });
 
   await prisma.webhookEvent.update({ where: { id: event.id }, data: { status: "PROCESSED", processedAt: new Date(), errorMessage: null } });
-  return NextResponse.json({ ok: true, status: "PROCESSED", orderId: order.id });
+  return NextResponse.json({ ok: true, status: "PROCESSED", orderId: order.id }, { headers: { "Cache-Control": "no-store" } });
 }

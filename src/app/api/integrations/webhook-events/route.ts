@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
+export const dynamic = 'force-dynamic';
+
 async function tryProcessEvent(eventId: string) {
   const event = await prisma.webhookEvent.findUnique({ where: { id: eventId } });
   if (!event) return { ok: false, message: "Event not found" };
@@ -154,7 +156,7 @@ export async function GET(req: Request) {
     take,
   });
 
-  return NextResponse.json({ items });
+  return NextResponse.json({ items }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(req: Request) {
@@ -163,8 +165,8 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => null);
   const id = body?.id as string | undefined;
-  if (!id) return NextResponse.json({ message: "Missing id" }, { status: 400 });
+  if (!id) return NextResponse.json({ message: "Missing id" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
 
   const result = await tryProcessEvent(id);
-  return NextResponse.json(result, { status: result.ok ? 200 : 400 });
+  return NextResponse.json(result, { headers: { "Cache-Control": "no-store" }, status: result.ok ? 200 : 400 });
 }
