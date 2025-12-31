@@ -12,10 +12,10 @@ export type PaginationProps = {
 };
 
 /**
- * Simple pagination UI: ← [page] →
+ * Simple pagination UI: <  page/totalPages  >
  *
- * We keep `pageSize` and `total` to compute totalPages for enabling/disabling arrows,
- * but we intentionally do not render extra text (no "of", no totals, no pageSize selector).
+ * We keep `pageSize` and `total` to compute totalPages for enabling/disabling arrows.
+ * The UI is intentionally minimal: just two icon buttons and the `page/totalPages` indicator.
  */
 export function Pagination({
   page,
@@ -36,27 +36,33 @@ export function Pagination({
       <button
         type="button"
         aria-label="Previous page"
-        className="rounded-lg border border-stroke dark:border-white/10 px-3 py-1.5 text-sm disabled:opacity-50"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-stroke bg-white text-dark hover:bg-gray-50 disabled:opacity-50 dark:border-white/10 dark:bg-dark-2 dark:text-white dark:hover:bg-dark-3"
         onClick={() => {
           if (!disabled && canPrev) onPageChange(safePage - 1);
         }}
         disabled={Boolean(disabled) || !canPrev}
       >
-        ←
+        <span aria-hidden className="text-lg leading-none">
+          ‹
+        </span>
       </button>
 
-      <div className="min-w-[2.5rem] text-center text-sm text-dark dark:text-white">{safePage}</div>
+      <div className="min-w-[3.25rem] select-none text-center text-sm text-dark-5 dark:text-white/70">
+        {safePage}/{totalPages}
+      </div>
 
       <button
         type="button"
         aria-label="Next page"
-        className="rounded-lg border border-stroke dark:border-white/10 px-3 py-1.5 text-sm disabled:opacity-50"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-stroke bg-white text-dark hover:bg-gray-50 disabled:opacity-50 dark:border-white/10 dark:bg-dark-2 dark:text-white dark:hover:bg-dark-3"
         onClick={() => {
           if (!disabled && canNext) onPageChange(safePage + 1);
         }}
         disabled={Boolean(disabled) || !canNext}
       >
-        →
+        <span aria-hidden className="text-lg leading-none">
+          ›
+        </span>
       </button>
     </div>
   );
