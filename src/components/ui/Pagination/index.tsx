@@ -46,3 +46,5 @@ export function Pagination({ page, pageSize, total, onPageChange, disabled, clas
     </div>
   );
 }
+
+export default Pagination;
