@@ -458,6 +458,9 @@ export default function ProductsPage() {
           }}
         />
 
+
+      </div>
+
       <Modal
         open={editOpen}
         title={editing ? `Edit Desain — ${editing.name}` : "Edit Desain"}

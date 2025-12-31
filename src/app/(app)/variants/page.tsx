@@ -473,21 +473,23 @@ export default function VariantsPage() {
         </div>
 
         {pagination ? (
-          <Pagination className="mt-4" page={page} pageSize={pageSize} total={pagination?.total ?? 0} disabled={loading} onPageChange={(p) => { setPage(p); load({ page: p }); }} onPageSizeChange={(s) => { setPage(1); setPageSize(s); load({ page: 1, pageSize: s }); }} />
-
-            <button
-              disabled={loading || page >= pagination.totalPages}
-              onClick={() => {
-                const np = Math.min(pagination.totalPages, page + 1);
-                setPage(np);
-                load({ page: np });
-              }}
-              className="rounded-xl bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:hover:bg-muted"
-            >
-              Next
-            </button>
-          </div>
-        ) : null}
+        <Pagination
+          className="mt-4"
+          page={page}
+          pageSize={pageSize}
+          total={pagination.total}
+          disabled={loading}
+          onPageChange={(p) => {
+            setPage(p);
+            load({ page: p });
+          }}
+          onPageSizeChange={(s) => {
+            setPage(1);
+            setPageSize(s);
+            load({ page: 1, pageSize: s });
+          }}
+        />
+      ) : null}
       </div>
 
       <Modal
