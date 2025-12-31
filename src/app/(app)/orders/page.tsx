@@ -193,7 +193,16 @@ export default function OrdersPage() {
           <div className="text-xs text-dark-6 dark:text-white/50">
             Total: {total} transaksi
           </div>
-          <Pagination page={page} pageSize={pageSize} total={total} disabled={loading} onPageChange={(p) => { setPage(p); load({ page: p }); }} />
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            disabled={loading}
+            onPageChange={(p) => {
+              // Only update state; the effect will trigger load()
+              setPage(p);
+            }}
+          />
       </div>
       </div>
     </div>
