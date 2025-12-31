@@ -451,11 +451,6 @@ export default function ProductsPage() {
             setPage(p);
             load({ page: p });
           }}
-          onPageSizeChange={(s) => {
-            setPage(1);
-            setPageSize(s);
-            load({ page: 1, pageSize: s });
-          }}
         />
 
 

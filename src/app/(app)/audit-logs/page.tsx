@@ -148,7 +148,7 @@ export default function AuditLogsPage() {
         <div className="text-gray-500">
           Total: <span className="font-medium text-gray-700 dark:text-gray-200">{total}</span>
         </div>
-        <Pagination page={page} pageSize={pageSize} total={total} disabled={loading} onPageChange={setPage} onPageSizeChange={(s) => { setPage(1); setPageSize(s); }} />
+        <Pagination page={page} pageSize={pageSize} total={total} disabled={loading} onPageChange={(p) => { setPage(p); load({ page: p }); }} />
       </div>
     </div>
   );

@@ -193,7 +193,7 @@ export default function OrdersPage() {
           <div className="text-xs text-dark-6 dark:text-white/50">
             Total: {total} transaksi
           </div>
-          <Pagination page={page} pageSize={pageSize} total={total} disabled={loading} onPageChange={setPage} onPageSizeChange={(s) => { setPage(1); setPageSize(s); }} />
+          <Pagination page={page} pageSize={pageSize} total={total} disabled={loading} onPageChange={(p) => { setPage(p); load({ page: p }); }} />
       </div>
       </div>
     </div>
