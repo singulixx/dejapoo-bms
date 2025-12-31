@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/client";
+import { Pagination } from "@/components/ui/pagination";
 
 type AuditLog = {
   id: string;
@@ -147,25 +148,7 @@ export default function AuditLogsPage() {
         <div className="text-gray-500">
           Total: <span className="font-medium text-gray-700 dark:text-gray-200">{total}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            className="rounded border border-gray-200 px-3 py-1 disabled:opacity-50 dark:border-gray-800"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page <= 1 || loading}
-          >
-            Prev
-          </button>
-          <span className="text-gray-600 dark:text-gray-300">
-            Page {page} / {pages}
-          </span>
-          <button
-            className="rounded border border-gray-200 px-3 py-1 disabled:opacity-50 dark:border-gray-800"
-            onClick={() => setPage((p) => Math.min(pages, p + 1))}
-            disabled={page >= pages || loading}
-          >
-            Next
-          </button>
-        </div>
+        <Pagination page={page} totalPages={pages} disabled={loading} onPageChange={setPage} />
       </div>
     </div>
   );

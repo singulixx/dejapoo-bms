@@ -6,6 +6,7 @@ import CurrencyInput from "@/components/FormElements/CurrencyInput";
 import { formatRupiah, parseRupiah } from "@/lib/rupiah";
 import { useNotify } from "@/components/ui/notify";
 import { StatusPill } from "@/components/ui/status-pill";
+import { Pagination } from "@/components/ui/pagination";
 
 type Product = {
   id: string;
@@ -440,35 +441,7 @@ export default function ProductsPage() {
           </table>
         </div>
 
-        <div className="mt-4 flex items-center justify-end gap-2">
-            <button
-              disabled={loading || page <= 1}
-              onClick={() => {
-                const nextPage = Math.max(1, page - 1);
-                setPage(nextPage);
-                load({ page: nextPage });
-              }}
-              className="rounded-xl bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-gray-2 disabled:text-dark-5 disabled:opacity-100 disabled:hover:bg-gray-2 dark:disabled:bg-black/40 dark:disabled:text-dark-6"
-            >
-              Prev
-            </button>
-
-            <div className="min-w-[96px] select-none rounded-xl border border-border bg-card px-3 py-2 text-center text-sm text-dark-5 dark:text-dark-6">
-              {pagination ? `${pagination.page} / ${pagination.totalPages}` : `${page}`}
-            </div>
-
-            <button
-              disabled={loading || (pagination ? page >= pagination.totalPages : false)}
-              onClick={() => {
-                const nextPage = page + 1;
-                setPage(nextPage);
-                load({ page: nextPage });
-              }}
-              className="rounded-xl bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-gray-2 disabled:text-dark-5 disabled:opacity-100 disabled:hover:bg-gray-2 dark:disabled:bg-black/40 dark:disabled:text-dark-6"
-            >
-              Next
-            </button>
-      </div>
+        <Pagination className="mt-4" page={page} totalPages={pagination?.totalPages ?? 1} disabled={loading} onPageChange={(p) => { setPage(p); load({ page: p }); }} />
 
       </div>
 

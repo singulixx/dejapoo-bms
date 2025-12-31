@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/client";
+import { Pagination } from "@/components/ui/pagination";
 
 type Outlet = { id: string; name: string; type: string };
 type Row = {
@@ -17,18 +18,27 @@ export default function StocksPage() {
   const [outletId, setOutletId] = useState("");
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState<{ page: number; totalPages: number; total: number; pageSize: number } | null>(null);
 
-  async function load() {
+  async function load(opts?: { page?: number }) {
+    const p = opts?.page ?? page;
     setLoading(true);
-    const [oRes, sRes] = await Promise.all([apiFetch("/api/outlets"), apiFetch(`/api/stocks?outletId=${encodeURIComponent(outletId)}&q=${encodeURIComponent(q)}&pageSize=100`)]);
+    const [oRes, sRes] = await Promise.all([apiFetch("/api/outlets"), apiFetch(`/api/stocks?outletId=${encodeURIComponent(outletId)}&q=${encodeURIComponent(q)}&page=${p}&pageSize=25`)]);
     const oJson = oRes.ok ? await oRes.json() : { items: [] };
     const sJson = sRes.ok ? await sRes.json() : { items: [] };
     setOutlets(oJson.items || []);
     setItems(sJson.items || []);
+    setPagination(sJson.pagination || null);
+    setPage(p);
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    // reset to page 1 when filters change
+    load({ page: 1 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [outletId, q]);
 
   const total = useMemo(() => items.reduce((a,b)=>a+b.qty,0), [items]);
 
@@ -45,12 +55,12 @@ export default function StocksPage() {
             {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
           </select>
           <input className="rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/10 px-3 py-2 outline-none" value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Cari SKU / produk / outlet" />
-          <button onClick={load} className="rounded-xl bg-primary px-4 py-2 font-medium text-white hover:bg-primary/90">Filter</button>
+          <button onClick={() => load({ page: 1 })} className="rounded-xl bg-primary px-4 py-2 font-medium text-white hover:bg-primary/90">Filter</button>
         </div>
       </div>
 
       <div className="rounded-2xl border border-stroke dark:border-white/10 bg-card dark:bg-card/5 p-4 text-sm text-dark-5 dark:text-white/70">
-        Total stok (hasil filter): <span className="text-dark dark:text-white font-semibold">{total}</span>
+        Total stok (hasil filter): <span className="text-dark dark:text-white font-semibold">{pagination?.total ?? total}</span>
       </div>
 
       <div className="rounded-2xl border border-stroke dark:border-white/10 bg-card dark:bg-card/5 p-4">
@@ -83,7 +93,9 @@ export default function StocksPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        
+        <Pagination className="mt-4" page={page} totalPages={pagination?.totalPages ?? 1} disabled={loading} onPageChange={(p) => load({ page: p })} />
+</div>
       </div>
     </div>
   );

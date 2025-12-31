@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/client";
 import { formatRupiah } from "@/lib/rupiah";
+import { Pagination } from "@/components/ui/pagination";
 
 // use shared rupiah formatter
 
@@ -192,17 +193,7 @@ export default function OrdersPage() {
           <div className="text-xs text-dark-6 dark:text-white/50">
             Total: {total} transaksi
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="rounded-xl border border-stroke dark:border-white/10 px-3 py-1.5 text-xs disabled:opacity-50"
-            >
-              Prev
-            </button>
-            <div className="text-xs text-dark-6 dark:text-white/50">
-              Page {page} / {totalPages}
-            </div>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}

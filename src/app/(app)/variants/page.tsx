@@ -7,6 +7,7 @@ import NumberInput from "@/components/FormElements/NumberInput";
 import { formatRupiah } from "@/lib/rupiah";
 import { useNotify } from "@/components/ui/notify";
 import { StatusPill } from "@/components/ui/status-pill";
+import { Pagination } from "@/components/ui/pagination";
 
 type Product = { id: string; name: string; code: string | null };
 type Variant = {
@@ -472,35 +473,7 @@ export default function VariantsPage() {
         </div>
 
         {pagination ? (
-          <div className="mt-4 flex items-center justify-end gap-2">
-            <button
-              disabled={loading || page <= 1}
-              onClick={() => {
-                const np = Math.max(1, page - 1);
-                setPage(np);
-                load({ page: np });
-              }}
-              className="rounded-xl bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:hover:bg-muted"
-            >
-              Prev
-            </button>
-
-            <div className="min-w-[96px] select-none rounded-xl border border-border bg-card px-3 py-2 text-center text-sm text-muted-foreground">
-              {pagination.page} / {pagination.totalPages}
-            </div>
-
-            <button
-              disabled={loading || page >= pagination.totalPages}
-              onClick={() => {
-                const np = Math.min(pagination.totalPages, page + 1);
-                setPage(np);
-                load({ page: np });
-              }}
-              className="rounded-xl bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:hover:bg-muted"
-            >
-              Next
-            </button>
-          </div>
+          <Pagination className="mt-4" page={page} totalPages={pagination.totalPages} disabled={loading} onPageChange={(p) => { setPage(p); load({ page: p }); }} />
         ) : null}
       </div>
 
