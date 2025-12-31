@@ -25,6 +25,8 @@ export const NAV_DATA = [
           { title: "Stok Saat Ini", url: "/stocks" },
           { title: "Barang Masuk", url: "/stock-in" },
           { title: "Barang Keluar", url: "/stock-out" },
+          { title: "Stock Adjustment", url: "/stock-adjustment" },
+          { title: "Stock Opname", url: "/stock-opname" },
         ],
       },
 
