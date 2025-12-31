@@ -31,11 +31,11 @@ export default function AuditLogsPage() {
 
   const pages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total, pageSize]);
 
-  async function load() {
+  async function load(opts?: { page?: number }) {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+      const params = new URLSearchParams({ page: String(opts?.page ?? page), pageSize: String(pageSize) });
       if (q.trim()) params.set("q", q.trim());
       const res = await apiFetch(`/api/audit-logs?${params.toString()}`);
       if (!res.ok) {
@@ -148,7 +148,7 @@ export default function AuditLogsPage() {
         <div className="text-gray-500">
           Total: <span className="font-medium text-gray-700 dark:text-gray-200">{total}</span>
         </div>
-        <Pagination page={page} pageSize={pageSize} total={total} disabled={loading} onPageChange={(p) => { setPage(p); load({ page: p }); }} />
+        <Pagination page={page} pageSize={pageSize} total={total} disabled={loading} onPageChange={(p) => { setPage(p); void load({ page: p }); }} />
       </div>
     </div>
   );
