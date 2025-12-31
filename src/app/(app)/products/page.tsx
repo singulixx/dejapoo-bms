@@ -447,7 +447,7 @@ export default function ProductsPage() {
           pageSize={pageSize}
           total={pagination?.total ?? 0}
           disabled={loading}
-          onPageChange={(p) => {
+          onPageChange={(p: number) => {
             setPage(p);
             load({ page: p });
           }}

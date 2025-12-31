@@ -198,7 +198,7 @@ export default function OrdersPage() {
             pageSize={pageSize}
             total={total}
             disabled={loading}
-            onPageChange={(p) => {
+            onPageChange={(p: number) => {
               // Only update state; the effect will trigger load()
               setPage(p);
             }}

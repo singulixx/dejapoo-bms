@@ -479,7 +479,7 @@ export default function VariantsPage() {
           pageSize={pageSize}
           total={pagination.total}
           disabled={loading}
-          onPageChange={(p) => {
+          onPageChange={(p: number) => {
             setPage(p);
             load({ page: p });
           }}

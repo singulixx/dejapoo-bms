@@ -143,7 +143,7 @@ export default function StocksPage() {
           pageSize={pageSize}
           total={totalRows}
           disabled={loading}
-          onPageChange={(p) => {
+          onPageChange={(p: number) => {
             setPage(p);
             load({ page: p });
           }}
