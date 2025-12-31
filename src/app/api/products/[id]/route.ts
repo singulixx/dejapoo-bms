@@ -3,8 +3,6 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
-export const dynamic = 'force-dynamic';
-
 const UpdateProduct = z.object({
   name: z.string().min(1).optional(),
   code: z.string().min(1).optional().nullable(),
@@ -20,14 +18,14 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   const { id } = await params;
   const parsed = UpdateProduct.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
   const updated = await prisma.product.update({
     where: { id: id },
     data: parsed.data,
   });
 
-  return NextResponse.json(updated, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json(updated);
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -39,5 +37,5 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     where: { id: id },
     data: { deletedAt: new Date() },
   });
-  return NextResponse.json({ ok: true, id: updated.id }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ ok: true, id: updated.id });
 }

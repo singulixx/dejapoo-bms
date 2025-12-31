@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/client";
-import { Pagination } from "@/components/ui/pagination";
+import { Pagination } from "@/components/ui/Pagination";
 
 type Outlet = { id: string; name: string; type: string };
 type Row = {
@@ -15,32 +15,47 @@ type Row = {
 export default function StocksPage() {
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [items, setItems] = useState<Row[]>([]);
+  const [totalRows, setTotalRows] = useState(0);
+
   const [outletId, setOutletId] = useState("");
   const [q, setQ] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState<{ page: number; totalPages: number; total: number; pageSize: number } | null>(null);
 
-  async function load(opts?: { page?: number }) {
-    const p = opts?.page ?? page;
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  const [loading, setLoading] = useState(true);
+
+  async function load(next?: { page?: number; pageSize?: number; outletId?: string; q?: string }) {
     setLoading(true);
-    const [oRes, sRes] = await Promise.all([apiFetch("/api/outlets"), apiFetch(`/api/stocks?outletId=${encodeURIComponent(outletId)}&q=${encodeURIComponent(q)}&page=${p}&pageSize=25`)]);
+
+    const oid = next?.outletId ?? outletId;
+    const qq = next?.q ?? q;
+    const pp = next?.page ?? page;
+    const ps = next?.pageSize ?? pageSize;
+
+    const params = new URLSearchParams();
+    if (oid) params.set("outletId", oid);
+    if (qq) params.set("q", qq);
+    params.set("page", String(pp));
+    params.set("pageSize", String(ps));
+
+    const [oRes, sRes] = await Promise.all([apiFetch("/api/outlets"), apiFetch(`/api/stocks?${params.toString()}`)]);
     const oJson = oRes.ok ? await oRes.json() : { items: [] };
-    const sJson = sRes.ok ? await sRes.json() : { items: [] };
+    const sJson = sRes.ok ? await sRes.json() : { items: [], total: 0 };
+
     setOutlets(oJson.items || []);
     setItems(sJson.items || []);
-    setPagination(sJson.pagination || null);
-    setPage(p);
+    setTotalRows(sJson.total || 0);
+
     setLoading(false);
   }
 
   useEffect(() => {
-    // reset to page 1 when filters change
-    load({ page: 1 });
+    load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [outletId, q]);
+  }, []);
 
-  const total = useMemo(() => items.reduce((a,b)=>a+b.qty,0), [items]);
+  const totalQtyOnPage = useMemo(() => items.reduce((a, b) => a + (b.qty || 0), 0), [items]);
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -49,23 +64,50 @@ export default function StocksPage() {
           <h1 className="text-2xl font-semibold">Stok Management</h1>
           <div className="text-sm text-dark-5 dark:text-white/60">Multi outlet (Gudang & Toko)</div>
         </div>
+
         <div className="flex flex-col gap-2 md:flex-row">
-          <select className="rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/10 px-3 py-2 outline-none" value={outletId} onChange={(e)=>setOutletId(e.target.value)}>
+          <select
+            className="rounded-xl bg-gray-2 px-3 py-2 text-sm text-dark outline-none dark:bg-black/40 dark:text-white"
+            value={outletId}
+            onChange={(e) => setOutletId(e.target.value)}
+          >
             <option value="">Semua Outlet</option>
-            {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+            {outlets.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.name}
+              </option>
+            ))}
           </select>
-          <input className="rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/10 px-3 py-2 outline-none" value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Cari SKU / produk / outlet" />
-          <button onClick={() => load({ page: 1 })} className="rounded-xl bg-primary px-4 py-2 font-medium text-white hover:bg-primary/90">Filter</button>
+
+          <input
+            className="rounded-xl bg-gray-2 px-3 py-2 text-sm text-dark outline-none dark:bg-black/40 dark:text-white"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Cari SKU / produk / outlet"
+          />
+
+          <button
+            onClick={() => {
+              setPage(1);
+              load({ page: 1 });
+            }}
+            className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
+          >
+            Filter
+          </button>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-stroke dark:border-white/10 bg-card dark:bg-card/5 p-4 text-sm text-dark-5 dark:text-white/70">
-        Total stok (hasil filter): <span className="text-dark dark:text-white font-semibold">{pagination?.total ?? total}</span>
+      <div className="rounded-2xl border border-stroke bg-card p-4 text-sm text-dark-5 dark:border-white/10 dark:bg-card/5 dark:text-white/70">
+        Baris (hasil filter): <span className="font-semibold text-dark dark:text-white">{totalRows}</span>
+        <span className="ml-2 text-dark-6 dark:text-white/50">• Qty (halaman ini):</span>{" "}
+        <span className="font-semibold text-dark dark:text-white">{totalQtyOnPage}</span>
       </div>
 
-      <div className="rounded-2xl border border-stroke dark:border-white/10 bg-card dark:bg-card/5 p-4">
+      <div className="rounded-2xl border border-stroke bg-card p-4 dark:border-white/10 dark:bg-card/5">
         <div className="mb-3 text-sm text-dark-5 dark:text-white/70">Stok per Varian per Outlet</div>
         {loading ? <div className="text-dark-5 dark:text-white/60">Loading...</div> : null}
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-dark dark:text-white/90">
             <thead className="text-dark-5 dark:text-white/60">
@@ -93,9 +135,24 @@ export default function StocksPage() {
               ))}
             </tbody>
           </table>
-        
-        <Pagination className="mt-4" page={page} totalPages={pagination?.totalPages ?? 1} disabled={loading} onPageChange={(p) => load({ page: p })} />
-</div>
+        </div>
+
+        <Pagination
+          className="mt-4"
+          page={page}
+          pageSize={pageSize}
+          total={totalRows}
+          disabled={loading}
+          onPageChange={(p) => {
+            setPage(p);
+            load({ page: p });
+          }}
+          onPageSizeChange={(s) => {
+            setPage(1);
+            setPageSize(s);
+            load({ page: 1, pageSize: s });
+          }}
+        />
       </div>
     </div>
   );

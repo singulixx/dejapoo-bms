@@ -3,8 +3,6 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
-export const dynamic = 'force-dynamic';
-
 const CreateOutletSchema = z.object({
   name: z.string().min(1),
   type: z.enum(["WAREHOUSE", "OFFLINE_STORE", "ONLINE"]).optional(),
@@ -16,12 +14,12 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => null);
   const parsed = CreateOutletSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ message: "Invalid payload", issues: parsed.error.issues }, { headers: { "Cache-Control": "no-store" }, status: 400 });
+  if (!parsed.success) return NextResponse.json({ message: "Invalid payload", issues: parsed.error.issues }, { status: 400 });
 
   const outlet = await prisma.outlet.create({
     data: { name: parsed.data.name, type: parsed.data.type ?? "WAREHOUSE" },
   });
-  return NextResponse.json(outlet, { headers: { "Cache-Control": "no-store" }, status: 201 });
+  return NextResponse.json(outlet, { status: 201 });
 }
 
 export async function GET(req: Request) {
@@ -35,5 +33,5 @@ export async function GET(req: Request) {
     where: { deletedAt: null, ...(includeInactive ? {} : { isActive: true }) },
     orderBy: [{ type: "asc" }, { name: "asc" }],
   });
-  return NextResponse.json({ items }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ items });
 }

@@ -3,8 +3,6 @@ import { requireAdmin } from "@/lib/auth";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 
-export const dynamic = 'force-dynamic';
-
 export const runtime = "nodejs";
 
 function safeExt(filename: string) {
@@ -18,11 +16,11 @@ export async function POST(req: Request) {
   if (!auth.ok) return auth.res;
 
   const form = await req.formData().catch(() => null);
-  if (!form) return NextResponse.json({ message: "Invalid form" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
+  if (!form) return NextResponse.json({ message: "Invalid form" }, { status: 400 });
 
   const file = form.get("file");
   if (!file || typeof file === "string") {
-    return NextResponse.json({ message: "File is required" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
+    return NextResponse.json({ message: "File is required" }, { status: 400 });
   }
 
   const filename = (file as any).name as string | undefined;
@@ -31,7 +29,7 @@ export async function POST(req: Request) {
 
   // limit 5MB
   if (buf.byteLength > 5 * 1024 * 1024) {
-    return NextResponse.json({ message: "File terlalu besar (maks 5MB)" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
+    return NextResponse.json({ message: "File terlalu besar (maks 5MB)" }, { status: 400 });
   }
 
   const uploadsDir = path.join(process.cwd(), "public", "uploads");
@@ -43,5 +41,5 @@ export async function POST(req: Request) {
   const outPath = path.join(uploadsDir, outName);
   await writeFile(outPath, buf);
 
-  return NextResponse.json({ url: `/uploads/${outName}` }, { headers: { "Cache-Control": "no-store" }, status: 201 });
+  return NextResponse.json({ url: `/uploads/${outName}` }, { status: 201 });
 }

@@ -3,8 +3,6 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
-export const dynamic = 'force-dynamic';
-
 const UpsertSchema = z.object({
   channel: z.enum(["SHOPEE", "TIKTOK"]),
   externalSkuId: z.string().min(1),
@@ -27,7 +25,7 @@ export async function GET(req: Request) {
     include: { variant: { include: { product: true } } },
   });
 
-  return NextResponse.json({ items }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ items });
 }
 
 export async function POST(req: Request) {
@@ -37,11 +35,11 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const parsed = UpsertSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ message: "Invalid payload", issues: parsed.error.issues }, { headers: { "Cache-Control": "no-store" }, status: 400 });
+    return NextResponse.json({ message: "Invalid payload", issues: parsed.error.issues }, { status: 400 });
   }
 
   const variant = await prisma.productVariant.findFirst({ where: { id: parsed.data.variantId, deletedAt: null } });
-  if (!variant) return NextResponse.json({ message: "Variant not found" }, { headers: { "Cache-Control": "no-store" }, status: 404 });
+  if (!variant) return NextResponse.json({ message: "Variant not found" }, { status: 404 });
 
   const mapped = await prisma.channelSkuMap.upsert({
     where: { channel_externalSkuId: { channel: parsed.data.channel, externalSkuId: parsed.data.externalSkuId } },
@@ -49,5 +47,5 @@ export async function POST(req: Request) {
     create: { channel: parsed.data.channel, externalSkuId: parsed.data.externalSkuId, variantId: parsed.data.variantId },
   });
 
-  return NextResponse.json(mapped, { headers: { "Cache-Control": "no-store" }, status: 201 });
+  return NextResponse.json(mapped, { status: 201 });
 }

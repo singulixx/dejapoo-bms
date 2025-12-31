@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/client";
-import { Pagination } from "@/components/ui/pagination";
 
+import { Pagination } from "@/components/ui/Pagination";
 type AuditLog = {
   id: string;
   createdAt: string;
@@ -22,7 +22,7 @@ type AuditLog = {
 
 export default function AuditLogsPage() {
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(50);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<AuditLog[]>([]);
@@ -148,7 +148,7 @@ export default function AuditLogsPage() {
         <div className="text-gray-500">
           Total: <span className="font-medium text-gray-700 dark:text-gray-200">{total}</span>
         </div>
-        <Pagination page={page} totalPages={pages} disabled={loading} onPageChange={setPage} />
+        <Pagination page={page} pageSize={pageSize} total={total} disabled={loading} onPageChange={setPage} onPageSizeChange={(s) => { setPage(1); setPageSize(s); }} />
       </div>
     </div>
   );

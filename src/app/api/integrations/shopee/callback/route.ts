@@ -4,8 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { encryptJson } from "@/lib/crypto";
 import { exchangeToken } from "@/lib/shopee";
 
-export const dynamic = 'force-dynamic';
-
 // Shopee will redirect to this endpoint with query params: code, shop_id, state.
 // We validate state (JWT signed in /connect) and then exchange code for tokens.
 
@@ -16,7 +14,7 @@ export async function GET(req: Request) {
   const state = url.searchParams.get("state") || "";
 
   if (!code || !state) {
-    return NextResponse.json({ message: "Missing code/state" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
+    return NextResponse.json({ message: "Missing code/state" }, { status: 400 });
   }
 
   // Validate state
@@ -24,7 +22,7 @@ export async function GET(req: Request) {
   try {
     payload = jwt.verify(state, process.env.JWT_SECRET!);
   } catch {
-    return NextResponse.json({ message: "Invalid state" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
+    return NextResponse.json({ message: "Invalid state" }, { status: 400 });
   }
 
   const shopId = shopIdRaw ? Number(shopIdRaw) : undefined;

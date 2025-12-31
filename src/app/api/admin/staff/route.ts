@@ -3,8 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { requireOwner } from "@/lib/auth";
 import { generateInitialPassword, generateRecoveryKey } from "@/lib/password";
 
-export const dynamic = 'force-dynamic';
-
 /**
  * OWNER creates STAFF account.
  * Returns the generated password + recoveryKey ONCE (show it and store it securely).

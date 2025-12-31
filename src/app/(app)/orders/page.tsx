@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/client";
+import { Pagination } from "@/components/ui/Pagination";
 import { formatRupiah } from "@/lib/rupiah";
-import { Pagination } from "@/components/ui/pagination";
 
 // use shared rupiah formatter
 
@@ -40,7 +40,7 @@ export default function OrdersPage() {
   const [to, setTo] = useState<string>("");
 
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(20);
   const [total, setTotal] = useState(0);
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total, pageSize]);
@@ -193,16 +193,8 @@ export default function OrdersPage() {
           <div className="text-xs text-dark-6 dark:text-white/50">
             Total: {total} transaksi
           </div>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className="rounded-xl border border-stroke dark:border-white/10 px-3 py-1.5 text-xs disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+          <Pagination page={page} pageSize={pageSize} total={total} disabled={loading} onPageChange={setPage} onPageSizeChange={(s) => { setPage(1); setPageSize(s); }} />
+      </div>
       </div>
     </div>
   );

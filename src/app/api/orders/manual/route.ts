@@ -4,8 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { createAndEmitNotification } from "@/lib/notifications";
 
-export const dynamic = 'force-dynamic';
-
 const BodySchema = z.object({
   outletId: z.string().min(1).optional(),
   channel: z.enum(["SHOPEE", "TIKTOK"]),
@@ -37,7 +35,7 @@ export async function POST(req: Request) {
   if (!auth.ok) return auth.res;
 
   const parsed = BodySchema.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
   // MVP: single outlet (Gudang). If not provided, auto-pick/create WAREHOUSE outlet.
   let outletId = parsed.data.outletId;
@@ -61,7 +59,7 @@ export async function POST(req: Request) {
   }));
 
   if (normalizedItems.some((x) => !x.variantId)) {
-    return NextResponse.json({ error: "Invalid input" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
+    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
 
   const created = await prisma.$transaction(async (tx) => {
@@ -152,7 +150,7 @@ export async function POST(req: Request) {
     throw e;
   });
 
-  if ((created as any).__error) return NextResponse.json(created, { headers: { "Cache-Control": "no-store" }, status: 400 });
+  if ((created as any).__error) return NextResponse.json(created, { status: 400 });
 
   // Realtime notification (best-effort). Broadcast to OWNER + ADMIN.
   try {
@@ -167,5 +165,5 @@ export async function POST(req: Request) {
   } catch {
     // ignore
   }
-  return NextResponse.json(created, { headers: { "Cache-Control": "no-store" }, status: 201 });
+  return NextResponse.json(created, { status: 201 });
 }

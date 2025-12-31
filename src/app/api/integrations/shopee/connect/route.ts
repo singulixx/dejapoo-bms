@@ -3,8 +3,6 @@ import jwt from "jsonwebtoken";
 import { requireAdmin } from "@/lib/auth";
 import { buildShopAuthUrl } from "@/lib/shopee";
 
-export const dynamic = 'force-dynamic';
-
 /**
  * Start Shopee OAuth (shop authorization).
  *

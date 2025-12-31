@@ -4,8 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { createAndEmitNotification } from "@/lib/notifications";
 
-export const dynamic = 'force-dynamic';
-
 const BodySchema = z.object({
   outletId: z.string().min(1).optional(),
   paymentMethod: z.enum(["CASH", "TRANSFER", "QRIS"]).optional(),
@@ -40,7 +38,7 @@ export async function POST(req: Request) {
   const auth = requireAdmin(req);
   if (!auth.ok) return auth.res;
 const parsed = BodySchema.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
   const { items, paymentMethod, customerName, note } = parsed.data;
   const date = parsed.data.date ? new Date(parsed.data.date) : new Date();
@@ -64,7 +62,7 @@ if (!outletId) {
   }));
 
   if (normalizedItems.some((x) => !x.variantId)) {
-    return NextResponse.json({ error: "Invalid input" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
+    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
 
   const created = await prisma.$transaction(async (tx) => {
@@ -153,7 +151,7 @@ if (!outletId) {
     throw e;
   });
 
-  if ((created as any).__error) return NextResponse.json(created, { headers: { "Cache-Control": "no-store" }, status: 400 });
+  if ((created as any).__error) return NextResponse.json(created, { status: 400 });
 
   // Realtime notification (best-effort). Broadcast to OWNER + ADMIN.
   try {
@@ -168,5 +166,5 @@ if (!outletId) {
     // ignore
   }
 
-  return NextResponse.json(created, { headers: { "Cache-Control": "no-store" }, status: 201 });
+  return NextResponse.json(created, { status: 201 });
 }

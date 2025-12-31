@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { apiFetch } from "@/lib/client";
+import { Pagination } from "@/components/ui/Pagination";
 import CurrencyInput from "@/components/FormElements/CurrencyInput";
 import NumberInput from "@/components/FormElements/NumberInput";
 import { formatRupiah } from "@/lib/rupiah";
 import { useNotify } from "@/components/ui/notify";
 import { StatusPill } from "@/components/ui/status-pill";
-import { Pagination } from "@/components/ui/pagination";
 
 type Product = { id: string; name: string; code: string | null };
 type Variant = {
@@ -473,7 +473,20 @@ export default function VariantsPage() {
         </div>
 
         {pagination ? (
-          <Pagination className="mt-4" page={page} totalPages={pagination.totalPages} disabled={loading} onPageChange={(p) => { setPage(p); load({ page: p }); }} />
+          <Pagination className="mt-4" page={page} pageSize={pageSize} total={pagination?.total ?? 0} disabled={loading} onPageChange={(p) => { setPage(p); load({ page: p }); }} onPageSizeChange={(s) => { setPage(1); setPageSize(s); load({ page: 1, pageSize: s }); }} />
+
+            <button
+              disabled={loading || page >= pagination.totalPages}
+              onClick={() => {
+                const np = Math.min(pagination.totalPages, page + 1);
+                setPage(np);
+                load({ page: np });
+              }}
+              className="rounded-xl bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:hover:bg-muted"
+            >
+              Next
+            </button>
+          </div>
         ) : null}
       </div>
 

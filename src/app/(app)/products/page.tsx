@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { apiFetch } from "@/lib/client";
+import { Pagination } from "@/components/ui/Pagination";
 import CurrencyInput from "@/components/FormElements/CurrencyInput";
 import { formatRupiah, parseRupiah } from "@/lib/rupiah";
 import { useNotify } from "@/components/ui/notify";
 import { StatusPill } from "@/components/ui/status-pill";
-import { Pagination } from "@/components/ui/pagination";
 
 type Product = {
   id: string;
@@ -441,7 +441,20 @@ export default function ProductsPage() {
           </table>
         </div>
 
-        <Pagination className="mt-4" page={page} totalPages={pagination?.totalPages ?? 1} disabled={loading} onPageChange={(p) => { setPage(p); load({ page: p }); }} />
+        <Pagination className="mt-4" page={page} pageSize={pageSize} total={pagination?.total ?? 0} disabled={loading} onPageChange={(p) => { setPage(p); load({ page: p }); }} onPageSizeChange={(s) => { setPage(1); setPageSize(s); load({ page: 1, pageSize: s }); }} />
+
+            <button
+              disabled={loading || (pagination ? page >= pagination.totalPages : false)}
+              onClick={() => {
+                const nextPage = page + 1;
+                setPage(nextPage);
+                load({ page: nextPage });
+              }}
+              className="rounded-xl bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-gray-2 disabled:text-dark-5 disabled:opacity-100 disabled:hover:bg-gray-2 dark:disabled:bg-black/40 dark:disabled:text-dark-6"
+            >
+              Next
+            </button>
+      </div>
 
       </div>
 

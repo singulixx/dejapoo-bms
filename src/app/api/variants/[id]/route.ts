@@ -3,8 +3,6 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
-export const dynamic = 'force-dynamic';
-
 const UpdateVariant = z.object({
   size: z.string().min(1).optional(),
   sku: z.string().min(1).optional(),
@@ -21,7 +19,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   const { id } = await params;
   const parsed = UpdateVariant.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { headers: { "Cache-Control": "no-store" }, status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
   // normalize empty string to null for optional nullable fields
   const data: any = { ...parsed.data };
@@ -31,7 +29,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     where: { id: id },
     data,
   });
-  return NextResponse.json(updated, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json(updated);
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -43,5 +41,5 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     where: { id: id },
     data: { deletedAt: new Date() },
   });
-  return NextResponse.json({ ok: true, id: updated.id }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ ok: true, id: updated.id });
 }
