@@ -30,6 +30,39 @@ export default function ReportsPage() {
     URL.revokeObjectURL(url);
   }
 
+  async function downloadStockXlsx() {
+    const res = await apiFetch("/api/reports/stock?format=xlsx");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "stock-report.xlsx";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function downloadMovementsCsv() {
+    const res = await apiFetch("/api/reports/movements?format=csv");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "stock_movements.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function downloadMovementsXlsx() {
+    const res = await apiFetch("/api/reports/movements?format=xlsx");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "stock-movements.xlsx";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div>
@@ -38,12 +71,28 @@ export default function ReportsPage() {
       </div>
 
       <div className="rounded-2xl border border-stroke dark:border-white/10 bg-card dark:bg-card/5 p-4">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="text-sm text-dark-5 dark:text-white/70">Export Laporan Stok</div>
             <div className="text-xs text-dark-6 dark:text-white/40">CSV (Excel bisa import)</div>
           </div>
-          <button onClick={downloadStockCsv} className="rounded-xl bg-primary px-4 py-2 font-medium text-white hover:bg-primary/90">Download CSV</button>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={downloadStockCsv} className="rounded-xl bg-primary px-4 py-2 font-medium text-white hover:bg-primary/90">Download CSV</button>
+            <button onClick={downloadStockXlsx} className="rounded-xl border border-stroke dark:border-white/10 px-4 py-2 font-medium text-dark dark:text-white/80 hover:bg-gray-2/50 dark:hover:bg-white/5">Download XLSX</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-stroke dark:border-white/10 bg-card dark:bg-card/5 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-sm text-dark-5 dark:text-white/70">Export Pergerakan Barang (StockMovement)</div>
+            <div className="text-xs text-dark-6 dark:text-white/40">IN/OUT/TRANSFER/ADJUSTMENT/OPNAME</div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={downloadMovementsCsv} className="rounded-xl bg-primary px-4 py-2 font-medium text-white hover:bg-primary/90">Download CSV</button>
+            <button onClick={downloadMovementsXlsx} className="rounded-xl border border-stroke dark:border-white/10 px-4 py-2 font-medium text-dark dark:text-white/80 hover:bg-gray-2/50 dark:hover:bg-white/5">Download XLSX</button>
+          </div>
         </div>
       </div>
 

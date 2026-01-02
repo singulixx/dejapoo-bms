@@ -43,7 +43,10 @@ export const NAV_DATA = [
       {
         title: "Integrasi",
         icon: Icons.PieChart,
-        items: [{ title: "Webhook & SKU", url: "/integrations" }],
+        items: [
+          { title: "Webhook & SKU", url: "/integrations" },
+          { title: "CSV Import", url: "/csv-import" },
+        ],
       },
 
       {

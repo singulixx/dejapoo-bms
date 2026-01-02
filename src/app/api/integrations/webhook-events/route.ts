@@ -120,7 +120,8 @@ async function tryProcessEvent(eventId: string) {
             variantId: it.variantId,
             qty: it.qty,
             note: `API ${event.channel} ${externalOrderId}`,
-            refType: "ORDER",
+            // Standardized StockMovement reference
+            refType: "STOCK_OUT",
             refId: created.id,
             createdAt: new Date(event.receivedAt),
           },

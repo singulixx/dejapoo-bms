@@ -168,7 +168,8 @@ export async function POST(req: Request) {
           variantId: it.variantId,
           qty: it.qty,
           note: `API SHOPEE ${externalOrderId}`,
-          refType: "ORDER",
+          // Standardized StockMovement reference
+          refType: "STOCK_OUT",
           refId: created.id,
         },
       });

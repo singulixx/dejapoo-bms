@@ -5,6 +5,7 @@ import { apiFetch } from "@/lib/client";
 import Pagination from "@/components/ui/Pagination";
 
 type Outlet = { id: string; name: string; type: string };
+type Product = { id: string; name: string };
 type Row = {
   id: string;
   qty: number;
@@ -14,10 +15,14 @@ type Row = {
 
 export default function StocksPage() {
   const [outlets, setOutlets] = useState<Outlet[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [items, setItems] = useState<Row[]>([]);
   const [totalRows, setTotalRows] = useState(0);
+  const [summary, setSummary] = useState<any>(null);
 
   const [outletId, setOutletId] = useState("");
+  const [productId, setProductId] = useState("");
+  const [size, setSize] = useState("");
   const [q, setQ] = useState("");
 
   const [page, setPage] = useState(1);
@@ -25,27 +30,45 @@ export default function StocksPage() {
 
   const [loading, setLoading] = useState(true);
 
-  async function load(next?: { page?: number; pageSize?: number; outletId?: string; q?: string }) {
+  async function load(next?: { page?: number; pageSize?: number; outletId?: string; productId?: string; size?: string; q?: string }) {
     setLoading(true);
 
     const oid = next?.outletId ?? outletId;
+    const pid = next?.productId ?? productId;
+    const sz = next?.size ?? size;
     const qq = next?.q ?? q;
     const pp = next?.page ?? page;
     const ps = next?.pageSize ?? pageSize;
 
     const params = new URLSearchParams();
     if (oid) params.set("outletId", oid);
+    if (pid) params.set("productId", pid);
+    if (sz) params.set("size", sz);
     if (qq) params.set("q", qq);
     params.set("page", String(pp));
     params.set("pageSize", String(ps));
 
-    const [oRes, sRes] = await Promise.all([apiFetch("/api/outlets"), apiFetch(`/api/stocks?${params.toString()}`)]);
+    const summaryParams = new URLSearchParams(params);
+    summaryParams.delete("page");
+    summaryParams.delete("pageSize");
+    summaryParams.set("summary", "1");
+
+    const [oRes, pRes, sRes, sumRes] = await Promise.all([
+      apiFetch("/api/outlets"),
+      apiFetch("/api/products?pageSize=300&includeInactive=1"),
+      apiFetch(`/api/stocks?${params.toString()}`),
+      apiFetch(`/api/stocks?${summaryParams.toString()}`),
+    ]);
     const oJson = oRes.ok ? await oRes.json() : { items: [] };
-    const sJson = sRes.ok ? await sRes.json() : { items: [], total: 0 };
+    const pJson = pRes.ok ? await pRes.json() : { items: [] };
+    const sJson = sRes.ok ? await sRes.json() : { items: [], pagination: { total: 0 } };
+    const sumJson = sumRes.ok ? await sumRes.json() : null;
 
     setOutlets(oJson.items || []);
     setItems(sJson.items || []);
-    setTotalRows(sJson.total || 0);
+    setTotalRows(sJson?.pagination?.total || 0);
+    setProducts((pJson.items || []).map((x: any) => ({ id: x.id, name: x.name })));
+    setSummary(sumJson);
 
     setLoading(false);
   }
@@ -56,6 +79,8 @@ export default function StocksPage() {
   }, []);
 
   const totalQtyOnPage = useMemo(() => items.reduce((a, b) => a + (b.qty || 0), 0), [items]);
+
+  const SIZES = useMemo(() => ["", "S", "M", "L", "XL", "XXL"], []);
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -75,6 +100,32 @@ export default function StocksPage() {
             {outlets.map((o) => (
               <option key={o.id} value={o.id}>
                 {o.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="rounded-xl bg-gray-2 px-3 py-2 text-sm text-dark outline-none dark:bg-black/40 dark:text-white"
+            value={productId}
+            onChange={(e) => setProductId(e.target.value)}
+          >
+            <option value="">Semua Desain</option>
+            {products.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="rounded-xl bg-gray-2 px-3 py-2 text-sm text-dark outline-none dark:bg-black/40 dark:text-white"
+            value={size}
+            onChange={(e) => setSize(e.target.value)}
+            title="Filter size"
+          >
+            {SIZES.map((s) => (
+              <option key={s || "ALL"} value={s}>
+                {s || "Semua Size"}
               </option>
             ))}
           </select>
@@ -99,9 +150,25 @@ export default function StocksPage() {
       </div>
 
       <div className="rounded-2xl border border-stroke bg-card p-4 text-sm text-dark-5 dark:border-white/10 dark:bg-card/5 dark:text-white/70">
-        Baris (hasil filter): <span className="font-semibold text-dark dark:text-white">{totalRows}</span>
-        <span className="ml-2 text-dark-6 dark:text-white/50">• Qty (halaman ini):</span>{" "}
-        <span className="font-semibold text-dark dark:text-white">{totalQtyOnPage}</span>
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            Baris (hasil filter):{" "}
+            <span className="font-semibold text-dark dark:text-white">{totalRows}</span>
+            <span className="ml-2 text-dark-6 dark:text-white/50">• Qty (halaman ini):</span>{" "}
+            <span className="font-semibold text-dark dark:text-white">{totalQtyOnPage}</span>
+            {summary?.lowRows != null ? (
+              <>
+                <span className="ml-2 text-dark-6 dark:text-white/50">• Stok menipis:</span>{" "}
+                <span className="font-semibold text-dark dark:text-white">{summary.lowRows}</span>
+              </>
+            ) : null}
+          </div>
+          {summary?.totalsPerProduct?.length ? (
+            <div className="text-xs text-dark-6 dark:text-white/50">
+              Top desain: {summary.totalsPerProduct.slice(0, 3).map((x: any) => `${x.productName} (${x.totalQty})`).join(" • ")}
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <div className="rounded-2xl border border-stroke bg-card p-4 dark:border-white/10 dark:bg-card/5">

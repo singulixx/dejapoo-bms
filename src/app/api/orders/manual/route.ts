@@ -12,6 +12,10 @@ const BodySchema = z.object({
   note: z.string().optional(),
   marketplaceOrderId: z.string().optional(),
   customerName: z.string().optional(),
+  // Extra fields for better Stock Out bookkeeping (stored in note for backward compatibility)
+  destinationType: z.enum(["CUSTOMER", "RESELLER", "MARKETPLACE"]).optional(),
+  destinationName: z.string().optional(),
+  paymentMethodLabel: z.string().optional(),
   items: z.array(
     z.object({
       productId: z.string().min(1),
@@ -50,7 +54,15 @@ export async function POST(req: Request) {
     }
   }
 
-  const { channel, note, marketplaceOrderId, customerName } = parsed.data;
+  const { channel, marketplaceOrderId, customerName } = parsed.data;
+  // Store richer metadata into note (non-breaking: no schema change)
+  const noteParts = [
+    parsed.data.destinationType ? `DEST:${parsed.data.destinationType}` : null,
+    parsed.data.destinationName ? `NAME:${parsed.data.destinationName}` : null,
+    parsed.data.paymentMethodLabel ? `PAY:${parsed.data.paymentMethodLabel}` : null,
+    parsed.data.note ? parsed.data.note : null,
+  ].filter(Boolean);
+  const note = noteParts.length ? noteParts.join(" | ") : undefined;
   const date = parsed.data.date ? new Date(parsed.data.date) : new Date();
 
   const normalizedItems = parsed.data.items.map((it) => ({
@@ -137,7 +149,8 @@ export async function POST(req: Request) {
           variantId: it.variantId!,
           qty: it.qty,
           note: note ?? null,
-          refType: "ORDER",
+          // Standardized StockMovement reference
+          refType: "STOCK_OUT",
           refId: order.id,
           createdAt: date,
         },

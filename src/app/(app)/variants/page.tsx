@@ -29,6 +29,8 @@ type Pagination = {
   totalPages: number;
 };
 
+const SIZES = ["S", "M", "L", "XL", "XXL"] as const;
+
 function Badge({ active }: { active: boolean }) {
   return (
     <span
@@ -366,12 +368,17 @@ export default function VariantsPage() {
             </button>
           </div>
 
-          <input
+          <select
             className="rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 px-3 py-2 outline-none"
             value={size}
             onChange={(e) => setSize(e.target.value)}
-            placeholder="Size (S/M/L/XL/XXL)"
-          />
+          >
+            {SIZES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
           <input
             className="rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 px-3 py-2 outline-none"
             value={color}
@@ -517,12 +524,17 @@ export default function VariantsPage() {
               Auto
             </button>
           </div>
-          <input
+          <select
             className="rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 px-3 py-2 outline-none"
             value={eSize}
             onChange={(e) => setESize(e.target.value)}
-            placeholder="Size"
-          />
+          >
+            {SIZES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
           <input
             className="rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 px-3 py-2 outline-none"
             value={eColor}

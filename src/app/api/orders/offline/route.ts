@@ -136,7 +136,8 @@ if (!outletId) {
           variantId: it.variantId!,
           qty: it.qty,
           note,
-          refType: "ORDER",
+          // Standardized StockMovement reference for POS
+          refType: "POS",
           refId: order.id,
           createdAt: date,
         },
