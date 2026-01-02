@@ -1,26 +1,32 @@
 import { NextResponse } from "next/server";
 
 /**
- * Allow Vercel Cron invocations and (optionally) a shared secret.
- *
- * - Vercel Cron adds `x-vercel-cron: 1`
- * - If you set CRON_SECRET, you can also call with `Authorization: Bearer <CRON_SECRET>`
+ * Vercel Cron akan mengirim header `x-vercel-cron: 1`.
+ * Untuk trigger manual (mis. dari Postman), gunakan Authorization Bearer CRON_SECRET.
  */
 export function requireCron(req: Request) {
-  const fromVercelCron = req.headers.get("x-vercel-cron") === "1";
+  const vercelCron = req.headers.get("x-vercel-cron");
+  if (vercelCron === "1") return { ok: true as const, source: "vercel" as const };
 
   const secret = process.env.CRON_SECRET;
-  const auth = req.headers.get("authorization") || "";
-  const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : null;
-  const fromSecret = Boolean(secret) && Boolean(bearer) && bearer === secret;
+  if (!secret) {
+    return {
+      ok: false as const,
+      res: NextResponse.json(
+        { message: "Forbidden (missing CRON_SECRET)" },
+        { status: 403 }
+      ),
+    };
+  }
 
-  if (fromVercelCron || fromSecret) return { ok: true as const };
+  const auth = req.headers.get("authorization") || "";
+  const [type, token] = auth.split(" ");
+  if (type === "Bearer" && token && token === secret) {
+    return { ok: true as const, source: "secret" as const };
+  }
 
   return {
     ok: false as const,
-    res: NextResponse.json(
-      { ok: false, error: "Unauthorized cron" },
-      { status: 401 }
-    ),
+    res: NextResponse.json({ message: "Forbidden" }, { status: 403 }),
   };
 }

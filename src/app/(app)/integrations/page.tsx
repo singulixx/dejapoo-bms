@@ -26,6 +26,7 @@ export default function IntegrationsPage() {
 
   const [shopeeStatus, setShopeeStatus] = useState<any>(null);
   const [testingShopee, setTestingShopee] = useState(false);
+  const [runningSync, setRunningSync] = useState(false);
   const loadShopeeStatus = async () => {
     try {
       const res = await apiFetch("/api/integrations/shopee/status");
@@ -172,6 +173,45 @@ async function loadUnmapped() {
           <div className="mx-2 h-6 w-px bg-stroke dark:bg-card/10" />
           <button className={classBtn(tab === "events")} onClick={() => setTab("events")}>Webhook Events</button>
           <button className={classBtn(tab === "mapping")} onClick={() => setTab("mapping")}>Mapping SKU</button>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-stroke dark:border-white/10 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div className="text-sm font-semibold">Maintenance</div>
+              <div className="text-xs text-dark-6 dark:text-white/40">
+                Jalankan sync order marketplace sekarang (manual). Cron harian tetap jalan di Vercel.
+              </div>
+            </div>
+            <button
+              disabled={runningSync}
+              onClick={async () => {
+                setRunningSync(true);
+                try {
+                  const res = await apiFetch("/api/cron/run-now", {
+                    method: "POST",
+                    body: JSON.stringify({ hours: 24 }),
+                  });
+                  const j = await res.json().catch(() => ({}));
+                  if (!res.ok) {
+                    toast({ title: "Sync gagal", description: j?.message || "Tidak bisa menjalankan sync", variant: "error" });
+                  } else {
+                    const p = j?.results?.shopee?.results?.[0];
+                    toast({ title: "Sync selesai", description: p ? `Shopee processed: ${p.processed}/${p.scanned}` : "Selesai" , variant: "success" });
+                    loadEvents();
+                    loadUnmapped();
+                  }
+                } catch (e: any) {
+                  toast({ title: "Sync gagal", description: e?.message || "Error", variant: "error" });
+                } finally {
+                  setRunningSync(false);
+                }
+              }}
+              className="rounded-xl bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-60"
+            >
+              {runningSync ? "Syncing..." : "Sync Sekarang"}
+            </button>
+          </div>
         </div>
 
         <div className="mt-4 grid gap-3 md:grid-cols-2">

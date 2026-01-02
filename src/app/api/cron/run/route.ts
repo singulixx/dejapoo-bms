@@ -1,44 +1,33 @@
 import { NextResponse } from "next/server";
 import { requireCron } from "@/lib/cron";
+import { syncShopeeOrders } from "@/lib/shopee-sync";
 
-async function call(req: Request, path: string, body: any = {}) {
-  const url = new URL(path, req.url);
-  const headers: Record<string, string> = { "content-type": "application/json" };
-  // If we are running via secret auth, forward it for local calls
-  const auth = req.headers.get("authorization");
-  if (auth) headers["authorization"] = auth;
-  // If we are running as Vercel cron, forward the marker header
-  const xv = req.headers.get("x-vercel-cron");
-  if (xv) headers["x-vercel-cron"] = xv;
-
-  const res = await fetch(url.toString(), {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body),
-  });
-  const json = await res.json().catch(() => null);
-  return { ok: res.ok, status: res.status, json };
-}
-
-/**
- * Single entrypoint cron (Hobby-safe): runs all scheduled tasks.
- */
+// Endpoint utama untuk Vercel Cron (Hobby-safe).
+// Jadwal di vercel.json: 0 19 * * * (≈ 02:00 WIB)
 export async function POST(req: Request) {
-  const gate = requireCron(req);
-  if (!gate.ok) return gate.res;
+  const cron = requireCron(req);
+  if (!cron.ok) return cron.res;
 
-  const results = {
-    refreshToken: await call(req, "/api/cron/refresh-token"),
-    shopeeOrders: await call(req, "/api/cron/shopee/orders", { hours: 24 }),
-    tiktokOrders: await call(req, "/api/cron/tiktok/orders", { hours: 24 }),
-    pushStock: await call(req, "/api/cron/push-stock"),
+  const startedAt = Date.now();
+  const body = await req.json().catch(() => ({}));
+  const hours = body?.hours ?? 24;
+
+  console.log(`[CRON] run start source=${cron.source} hours=${hours}`);
+
+  const results: any = {
+    shopee: null as any,
+    tiktok: { ok: true, message: "Skip (not implemented)" },
+    pushStock: { ok: true, message: "Skip (not implemented)" },
   };
 
-  const ok = Object.values(results).every((r) => (r as any).ok);
-  return NextResponse.json({ ok, results });
-}
+  try {
+    results.shopee = await syncShopeeOrders({ hours: Number(hours) });
+  } catch (e: any) {
+    results.shopee = { ok: false, message: String(e?.message || e) };
+  }
 
-// Also allow GET for quick manual testing
-export async function GET(req: Request) {
-  return POST(req);
+  const ms = Date.now() - startedAt;
+  console.log(`[CRON] run done in ${ms}ms`);
+
+  return NextResponse.json({ ok: true, tookMs: ms, results });
 }

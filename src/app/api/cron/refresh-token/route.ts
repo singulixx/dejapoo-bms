@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { requireCron } from "@/lib/cron";
 
 export async function POST(req: Request) {
-  const auth = requireAuth(req);
-  if (!auth.ok) return auth.res;
+  const cron = requireCron(req);
+  if (!cron.ok) return cron.res;
 
-  return NextResponse.json(
-    { message: "Not implemented yet. This endpoint is protected and ready for Vercel Cron wiring." },
-    { status: 501 }
-  );
+  // Token Shopee direfresh otomatis saat sync orders.
+  // Endpoint ini disediakan bila suatu saat perlu refresh terpisah.
+  return NextResponse.json({ ok: true, message: "No-op (token refresh handled during sync)" });
 }
