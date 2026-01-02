@@ -453,7 +453,7 @@ export default function VariantsPage() {
                       </button>
                       <button
                         onClick={() => softDelete(v)}
-                        className="rounded-xl bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary/90"
+                        className="rounded-xl bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
                       >
                         Hapus
                       </button>

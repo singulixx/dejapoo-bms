@@ -229,7 +229,7 @@ export default function StockOpnamePage() {
 
                   <td className="py-2 text-right">
                     <button
-                      className="rounded-xl bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary/90"
+                      className="rounded-xl bg-red-600 px-3 py-2 text-xs font-medium text-white hover:bg-red-700"
                       onClick={() => removeRow(idx)}
                       disabled={computed.length <= 1}
                     >

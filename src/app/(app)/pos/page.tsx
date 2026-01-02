@@ -205,7 +205,7 @@ export default function PosPage() {
                 </div>
 
                 <div className="md:col-span-2 flex gap-2">
-                  <button className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:bg-gray-2 disabled:text-dark-5 disabled:hover:bg-gray-2 disabled:opacity-100 dark:disabled:bg-black/40 dark:disabled:text-dark-6" onClick={() => removeRow(i)} disabled={rows.length === 1}>
+                  <button className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:bg-gray-2 disabled:text-dark-5 disabled:hover:bg-gray-2 disabled:opacity-100 dark:disabled:bg-black/40 dark:disabled:text-dark-6" onClick={() => removeRow(i)} disabled={rows.length === 1}>
                     Hapus
                   </button>
                 </div>

@@ -290,7 +290,7 @@ export default function IntegrationsPage() {
                       {m.variant?.product?.name} • {m.variant?.size} • <span className="font-mono text-xs">{m.variant?.sku}</span>
                     </td>
                     <td className="py-2">
-                      <button onClick={() => deleteMap(m.id)} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary/90">
+                      <button onClick={() => deleteMap(m.id)} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700">
                         Hapus
                       </button>
                     </td>
