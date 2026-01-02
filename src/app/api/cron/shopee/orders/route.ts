@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireCron } from "@/lib/cron";
+import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { decryptJson, encryptJson } from "@/lib/crypto";
 import { refreshToken, shopeeAuthedGet } from "@/lib/shopee";
@@ -53,8 +53,8 @@ async function ensureFreshToken(account: any) {
 }
 
 export async function POST(req: Request) {
-  const gate = requireCron(req);
-  if (!gate.ok) return gate.res;
+  const auth = requireAuth(req);
+  if (!auth.ok) return auth.res;
 
   const body = await req.json().catch(() => ({}));
   const hours = Number(body?.hours ?? 24);

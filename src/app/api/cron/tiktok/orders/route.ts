@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { requireCron } from "@/lib/cron";
+import { requireAuth } from "@/lib/auth";
 
 export async function POST(req: Request) {
-  const gate = requireCron(req);
-  if (!gate.ok) return gate.res;
+  const auth = requireAuth(req);
+  if (!auth.ok) return auth.res;
 
   return NextResponse.json(
     { message: "Not implemented yet. This endpoint is protected and ready for Vercel Cron wiring." },

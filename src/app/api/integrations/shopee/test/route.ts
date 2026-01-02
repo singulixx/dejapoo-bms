@@ -28,7 +28,8 @@ export async function GET() {
     path: "/api/v2/shop/get_shop_info",
     accessToken,
     shopId,
-    params: { shop_id: shopId },
+    // shopeeAuthedGet memakai key `query` (bukan `params`)
+    query: { shop_id: shopId },
   });
 
   return NextResponse.json({ ok: true, shop_id: shopId, result: data });
