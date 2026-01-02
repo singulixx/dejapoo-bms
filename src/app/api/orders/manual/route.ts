@@ -12,10 +12,10 @@ const BodySchema = z.object({
   note: z.string().optional(),
   marketplaceOrderId: z.string().optional(),
   customerName: z.string().optional(),
-  // Extra fields for better Stock Out bookkeeping (stored in note for backward compatibility)
-  destinationType: z.enum(["CUSTOMER", "RESELLER", "MARKETPLACE"]).optional(),
+  // Extra fields for better Stock Out bookkeeping
+  destinationType: z.enum(["CUSTOMER", "RESELLER", "MARKETPLACE", "OTHER"]).optional(),
   destinationName: z.string().optional(),
-  paymentMethodLabel: z.string().optional(),
+  paymentMethod: z.enum(["CASH", "COD", "TRANSFER", "QRIS", "E_WALLET"]).optional(),
   items: z.array(
     z.object({
       productId: z.string().min(1),
@@ -55,11 +55,11 @@ export async function POST(req: Request) {
   }
 
   const { channel, marketplaceOrderId, customerName } = parsed.data;
-  // Store richer metadata into note (non-breaking: no schema change)
+  // Store richer metadata into note as well (helpful for legacy exports/search)
   const noteParts = [
     parsed.data.destinationType ? `DEST:${parsed.data.destinationType}` : null,
     parsed.data.destinationName ? `NAME:${parsed.data.destinationName}` : null,
-    parsed.data.paymentMethodLabel ? `PAY:${parsed.data.paymentMethodLabel}` : null,
+    parsed.data.paymentMethod ? `PAY:${parsed.data.paymentMethod}` : null,
     parsed.data.note ? parsed.data.note : null,
   ].filter(Boolean);
   const note = noteParts.length ? noteParts.join(" | ") : undefined;
@@ -120,7 +120,9 @@ export async function POST(req: Request) {
         marketplaceOrderId: marketplaceOrderId ?? null,
         totalAmount,
         status: "NEW",
-        paymentMethod: null,
+        paymentMethod: parsed.data.paymentMethod ?? null,
+        destinationType: (parsed.data.destinationType as any) ?? null,
+        destinationName: parsed.data.destinationName ?? null,
         customerName: customerName ?? null,
         note: note ?? null,
         createdAt: date,

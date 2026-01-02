@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { apiFetch } from "@/lib/client";
+import EmptyState from "@/components/EmptyState";
 import { useNotify } from "@/components/ui/notify";
 import { StatusPill } from "@/components/ui/status-pill";
 
@@ -290,7 +291,10 @@ export default function OutletsPage() {
             ) : null}
           </div>
 
-          <div className="overflow-x-auto">
+          {items.length === 0 && !loading ? (
+            <EmptyState title="Belum ada outlet" description="Tambahkan outlet/gudang agar stok bisa disimpan per lokasi." />
+          ) : (
+            <div className="overflow-x-auto">
             <table className="w-full text-sm text-dark dark:text-white/90">
               <thead className="text-dark-5 dark:text-white/60">
                 <tr>
@@ -341,7 +345,8 @@ export default function OutletsPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -14,6 +14,7 @@ export default function CsvImportPage() {
   const [mapping, setMapping] = useState({ orderId: "", sku: "", qty: "", date: "", price: "" });
   const [preview, setPreview] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [lastBatch, setLastBatch] = useState<{ id: string; status: string } | null>(null);
 
   const mappedOk = useMemo(() => !!(mapping.orderId && mapping.sku && mapping.qty), [mapping]);
 
@@ -88,7 +89,31 @@ export default function CsvImportPage() {
       setPreview(j);
       return;
     }
+    if (res.status === 202 && j?.batchId) {
+      setLastBatch({ id: j.batchId, status: j.status || "DRAFT" });
+      toast({ title: "Draft tersimpan", description: "Lengkapi mapping / stok lalu Finalize", variant: "success" });
+      return;
+    }
     toast({ title: "Berhasil", description: `Berhasil import ${j?.createdCount || 0} order`, variant: "success" });
+    setPreview(null);
+    setLastBatch(null);
+  }
+
+  async function finalizeBatch() {
+    if (!lastBatch?.id) return;
+    setLoading(true);
+    const res = await apiFetch("/api/import/csv-orders", {
+      method: "POST",
+      body: JSON.stringify({ channel, mode: "finalize", batchId: lastBatch.id, mapping: { orderId: "x", sku: "x", qty: "x" } }),
+    });
+    const j = await res.json().catch(() => null);
+    setLoading(false);
+    if (!res.ok) {
+      toast({ title: "Finalize gagal", description: j?.message || "Gagal finalize", variant: "error" });
+      return;
+    }
+    toast({ title: "Finalize OK", description: `Import: ${j?.createdCount || 0} order`, variant: "success" });
+    setLastBatch(null);
     setPreview(null);
   }
 
@@ -167,11 +192,22 @@ export default function CsvImportPage() {
           <button
             type="button"
             onClick={submit}
-            disabled={!preview || loading || (preview?.missingSkus?.length ?? 0) > 0 || (preview?.insufficient?.length ?? 0) > 0}
+            disabled={!preview || loading}
             className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
           >
             Submit
           </button>
+
+          {lastBatch ? (
+            <button
+              type="button"
+              onClick={finalizeBatch}
+              disabled={loading}
+              className="rounded-xl border border-stroke dark:border-white/10 px-4 py-2 text-sm font-medium text-dark dark:text-white/80 hover:bg-gray-2/50 dark:hover:bg-white/5 disabled:opacity-50"
+            >
+              Finalize Draft
+            </button>
+          ) : null}
           <a
             href="/integrations"
             className="rounded-xl border border-stroke dark:border-white/10 px-4 py-2 text-sm font-medium text-dark dark:text-white/80 hover:bg-gray-2/50 dark:hover:bg-white/5"

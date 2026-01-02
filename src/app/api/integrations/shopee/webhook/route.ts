@@ -45,6 +45,17 @@ function normalizeItems(payload: any): Array<{ externalSkuId: string; qty: numbe
     .filter((x) => x.externalSkuId && x.qty > 0);
 }
 
+function determineAction(payload: any): { action: "OUT" | "IN"; status: "PAID" | "CANCELLED" | "RETURNED" } {
+  const raw = String(
+    payload?.status ?? payload?.order_status ?? payload?.data?.status ?? payload?.data?.order_status ?? payload?.event ?? payload?.event_type ?? payload?.type ?? ""
+  ).toLowerCase();
+  const canceledHints = ["cancel", "cancelled", "canceled", "void", "closed", "expire", "failed", "refund"];
+  const returnedHints = ["return", "returned", "reverse", "rto"];
+  if (returnedHints.some((h) => raw.includes(h))) return { action: "IN", status: "RETURNED" };
+  if (canceledHints.some((h) => raw.includes(h))) return { action: "IN", status: "CANCELLED" };
+  return { action: "OUT", status: "PAID" };
+}
+
 export async function POST(req: Request) {
   // Auth options:
   // 1) Simple shared secret (recommended for internal testing): set WEBHOOK_SECRET_SHOPEE and send header x-webhook-secret
@@ -121,8 +132,10 @@ export async function POST(req: Request) {
   const variants = await prisma.productVariant.findMany({ where: { id: { in: variantIds }, deletedAt: null }, include: { product: true } });
   const vById = new Map(variants.map((v) => [v.id, v]));
 
-  // stock check
-  for (const it of items) {
+  const { action, status: mappedStatus } = determineAction(payload);
+
+  // stock check (only for OUT)
+  if (action === "OUT") for (const it of items) {
     const variantId = mapBySku.get(it.externalSkuId)!;
     const stock = await prisma.stock.findUnique({ where: { outletId_variantId: { outletId: outlet.id, variantId } } });
     const current = stock?.qty ?? 0;
@@ -143,7 +156,7 @@ export async function POST(req: Request) {
   const order = await prisma.$transaction(async (tx) => {
     const created = await tx.order.upsert({
       where: { channel_externalOrderId: { channel: "SHOPEE", externalOrderId } },
-      update: { totalAmount, outletId: outlet.id, source: "API" },
+      update: { totalAmount, outletId: outlet.id, source: "API", status: mappedStatus },
       create: {
         orderCode: `API-SHOPEE-${externalOrderId.slice(-12)}`,
         channel: "SHOPEE",
@@ -151,25 +164,30 @@ export async function POST(req: Request) {
         outletId: outlet.id,
         externalOrderId,
         totalAmount,
-        status: "NEW",
+        status: mappedStatus,
       },
     });
 
     await tx.orderItem.deleteMany({ where: { orderId: created.id } });
     await tx.orderItem.createMany({ data: orderItems.map((it) => ({ ...it, orderId: created.id })) });
 
-    // Apply stock only if not already PROCESSED
+    // Idempotent stock apply per action+variant
+    const refType = action === "OUT" ? "STOCK_OUT" : "RETURN";
     for (const it of orderItems) {
-      await tx.stock.update({ where: { outletId_variantId: { outletId: outlet.id, variantId: it.variantId } }, data: { qty: { decrement: it.qty } } });
+      const exists = await tx.stockMovement.findFirst({ where: { refType, refId: created.id, variantId: it.variantId } });
+      if (exists) continue;
+      await tx.stock.update({
+        where: { outletId_variantId: { outletId: outlet.id, variantId: it.variantId } },
+        data: { qty: action === "OUT" ? { decrement: it.qty } : { increment: it.qty } },
+      });
       await tx.stockMovement.create({
         data: {
-          type: "OUT",
+          type: action === "OUT" ? "OUT" : "IN",
           outletId: outlet.id,
           variantId: it.variantId,
           qty: it.qty,
-          note: `API SHOPEE ${externalOrderId}`,
-          // Standardized StockMovement reference
-          refType: "STOCK_OUT",
+          note: `API SHOPEE ${externalOrderId} (${mappedStatus})`,
+          refType,
           refId: created.id,
         },
       });

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/client";
 import { formatRupiah } from "@/lib/rupiah";
+import EmptyState from "@/components/EmptyState";
 
 // use shared rupiah formatter
 
@@ -104,7 +105,16 @@ export default function ReportsPage() {
             {/* Light mode sebelumnya memakai bg-black/30 sehingga terlihat seperti kotak abu-abu besar */}
             <div className="rounded-2xl border border-stroke dark:border-white/10 bg-white dark:bg-black/30 p-4">
               <div className="mb-2 text-xs text-dark-6 dark:text-white/50">Per Channel</div>
-              <table className="w-full text-sm text-dark dark:text-white/90">
+              {(sales.byChannel || []).length === 0 ? (
+                <EmptyState title="Belum ada data channel" description="Data per channel akan tampil setelah ada transaksi." className="py-8" />
+              ) : (
+                {(sales.byChannel || []).length === 0 ? (
+                <EmptyState title="Belum ada data penjualan per channel" description="Transaksi akan muncul setelah kamu input penjualan (POS/Stock Out/CSV)." className="py-8" />
+              ) : (
+                {(sales.byChannel || []).length === 0 ? (
+                <EmptyState title="Belum ada data penjualan" description="Belum ada transaksi yang tercatat." className="py-8" />
+              ) : (
+                <table className="w-full text-sm text-dark dark:text-white/90">
                 <thead className="text-dark-5 dark:text-white/60">
                   <tr><th className="py-2 text-left">Channel</th><th className="py-2 text-right">Orders</th><th className="py-2 text-right">Omzet</th></tr>
                 </thead>
@@ -117,12 +127,24 @@ export default function ReportsPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                </table>
+              )}
+              )}
+              )}
             </div>
 
             <div className="rounded-2xl border border-stroke dark:border-white/10 bg-white dark:bg-black/30 p-4">
               <div className="mb-2 text-xs text-dark-6 dark:text-white/50">Top Produk</div>
-              <table className="w-full text-sm text-dark dark:text-white/90">
+              {(sales.byChannel || []).length === 0 ? (
+                <EmptyState title="Belum ada data channel" description="Data per channel akan tampil setelah ada transaksi." className="py-8" />
+              ) : (
+                {(sales.byProduct || []).length === 0 ? (
+                <EmptyState title="Belum ada data penjualan" description="Tambahkan transaksi agar laporan top produk muncul." className="py-8" />
+              ) : (
+                {((sales.byProduct || []).slice(0, 10)).length === 0 ? (
+                <EmptyState title="Belum ada data produk terjual" description="Setelah ada transaksi, daftar produk terlaris akan muncul di sini." className="py-8" />
+              ) : (
+                <table className="w-full text-sm text-dark dark:text-white/90">
                 <thead className="text-dark-5 dark:text-white/60">
                   <tr><th className="py-2 text-left">Produk</th><th className="py-2 text-right">Qty</th><th className="py-2 text-right">Omzet</th></tr>
                 </thead>
@@ -136,10 +158,14 @@ export default function ReportsPage() {
                   ))}
                 </tbody>
               </table>
+              )}
+              )}
+              )}
+              )}
             </div>
           </div>
         ) : (
-          <div className="text-dark-5 dark:text-white/60">Belum ada data.</div>
+          <EmptyState title="Belum ada data laporan" description="Laporan akan muncul setelah ada transaksi penjualan atau pergerakan stok." />
         )}
       </div>
     </div>

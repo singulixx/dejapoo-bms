@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/client";
+import EmptyState from "@/components/EmptyState";
 import { useRouter } from "next/navigation";
 
 type CreateStaffResult =
@@ -237,7 +238,10 @@ export default function UsersPage() {
           </button>
         </div>
 
-        <div className="mt-4 overflow-x-auto">
+        {staff.length === 0 && !loadingList ? (
+          <EmptyState title="Belum ada akun staff" description="Tambahkan akun staff jika kamu ingin tim ikut input stok/penjualan." />
+        ) : (
+          <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="text-left text-dark-6">
@@ -288,7 +292,8 @@ export default function UsersPage() {
               )}
             </tbody>
           </table>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

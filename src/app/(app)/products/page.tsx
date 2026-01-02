@@ -7,6 +7,7 @@ import CurrencyInput from "@/components/FormElements/CurrencyInput";
 import { formatRupiah, parseRupiah } from "@/lib/rupiah";
 import { useNotify } from "@/components/ui/notify";
 import { StatusPill } from "@/components/ui/status-pill";
+import EmptyState from "@/components/EmptyState";
 
 type Product = {
   id: string;
@@ -374,7 +375,10 @@ export default function ProductsPage() {
         <div className="mb-3 text-sm text-dark-5 dark:text-white/70">Daftar Desain</div>
         {loading ? <div className="text-dark-5 dark:text-white/60">Loading...</div> : null}
         {err ? <div className="text-red-400">{err}</div> : null}
-        <div className="overflow-x-auto">
+        {filtered.length === 0 && !loading ? (
+          <EmptyState title="Belum ada desain" description="Tambahkan desain pertama kamu di form di atas." />
+        ) : (
+          <div className="overflow-x-auto">
           <table className="w-full text-sm text-dark dark:text-white/90">
             <thead className="text-dark-5 dark:text-white/60">
               <tr>
@@ -439,7 +443,8 @@ export default function ProductsPage() {
               ))}
             </tbody>
           </table>
-        </div>
+          </div>
+        )}
 
         <Pagination
           className="mt-4"

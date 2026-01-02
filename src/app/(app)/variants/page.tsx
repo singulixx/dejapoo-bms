@@ -8,6 +8,7 @@ import NumberInput from "@/components/FormElements/NumberInput";
 import { formatRupiah } from "@/lib/rupiah";
 import { useNotify } from "@/components/ui/notify";
 import { StatusPill } from "@/components/ui/status-pill";
+import EmptyState from "@/components/EmptyState";
 
 type Product = { id: string; name: string; code: string | null };
 type Variant = {
@@ -418,7 +419,10 @@ export default function VariantsPage() {
 
         {loading ? <div className="text-dark-5 dark:text-white/60">Loading...</div> : null}
 
-        <div className="overflow-x-auto">
+        {items.length === 0 && !loading ? (
+          <EmptyState title="Belum ada varian" description="Buat varian ukuran untuk setiap desain agar stok bisa dicatat." />
+        ) : (
+          <div className="overflow-x-auto">
           <table className="w-full text-sm text-dark dark:text-white/90">
             <thead className="text-dark-5 dark:text-white/60">
               <tr>
@@ -477,7 +481,8 @@ export default function VariantsPage() {
               ) : null}
             </tbody>
           </table>
-        </div>
+          </div>
+        )}
 
         {pagination ? (
         <Pagination

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/client";
 import Pagination from "@/components/ui/Pagination";
+import EmptyState from "@/components/EmptyState";
 import { formatRupiah } from "@/lib/rupiah";
 
 // use shared rupiah formatter
@@ -185,7 +186,7 @@ export default function OrdersPage() {
               </table>
             </div>
           ) : (
-            <div className="text-dark-5 dark:text-white/60">Belum ada transaksi.</div>
+            <EmptyState title="Belum ada transaksi" description="Transaksi akan muncul setelah kamu input penjualan (POS/Stock Out/CSV)." />
           )
         ) : null}
 

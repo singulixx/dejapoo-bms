@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/client";
 import Pagination from "@/components/ui/Pagination";
+import EmptyState from "@/components/EmptyState";
 
 type Outlet = { id: string; name: string; type: string };
 type Product = { id: string; name: string };
@@ -175,7 +176,10 @@ export default function StocksPage() {
         <div className="mb-3 text-sm text-dark-5 dark:text-white/70">Stok per Varian per Outlet</div>
         {loading ? <div className="text-dark-5 dark:text-white/60">Loading...</div> : null}
 
-        <div className="overflow-x-auto">
+        {items.length === 0 && !loading ? (
+          <EmptyState title="Belum ada data stok" description="Belum ada stok yang tercatat. Pastikan kamu sudah membuat varian dan input barang masuk." />
+        ) : (
+          <div className="overflow-x-auto">
           <table className="w-full text-sm text-dark dark:text-white/90">
             <thead className="text-dark-5 dark:text-white/60">
               <tr>
@@ -202,7 +206,8 @@ export default function StocksPage() {
               ))}
             </tbody>
           </table>
-        </div>
+          </div>
+        )}
 
         <Pagination
           className="mt-4"

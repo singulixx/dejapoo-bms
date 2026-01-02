@@ -2,6 +2,27 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
+function determineAction(payload: any): { action: "OUT" | "IN"; status: "PAID" | "CANCELLED" | "RETURNED" } {
+  const raw = String(
+    payload?.status ??
+      payload?.order_status ??
+      payload?.data?.status ??
+      payload?.data?.order_status ??
+      payload?.event ??
+      payload?.event_type ??
+      payload?.type ??
+      ""
+  ).toLowerCase();
+
+  // best-effort mapping
+  const canceledHints = ["cancel", "cancelled", "canceled", "void", "closed", "expire", "failed", "refund"];
+  const returnedHints = ["return", "returned", "reverse", "rto"];
+
+  if (returnedHints.some((h) => raw.includes(h))) return { action: "IN", status: "RETURNED" };
+  if (canceledHints.some((h) => raw.includes(h))) return { action: "IN", status: "CANCELLED" };
+  return { action: "OUT", status: "PAID" };
+}
+
 async function tryProcessEvent(eventId: string) {
   const event = await prisma.webhookEvent.findUnique({ where: { id: eventId } });
   if (!event) return { ok: false, message: "Event not found" };
@@ -63,14 +84,18 @@ async function tryProcessEvent(eventId: string) {
   const variants = await prisma.productVariant.findMany({ where: { id: { in: variantIds }, deletedAt: null }, include: { product: true } });
   const vById = new Map(variants.map((v) => [v.id, v]));
 
-  // Stock check
-  for (const it of items) {
-    const variantId = mapBySku.get(it.externalSkuId)!;
-    const stock = await prisma.stock.findUnique({ where: { outletId_variantId: { outletId: outlet.id, variantId } } });
-    const current = stock?.qty ?? 0;
-    if (current - it.qty < 0) {
-      await prisma.webhookEvent.update({ where: { id: eventId }, data: { status: "ERROR", errorMessage: `Insufficient stock for ${it.externalSkuId}` } });
-      return { ok: false, message: "Insufficient stock" };
+  const { action, status: mappedStatus } = determineAction(payload);
+
+  // Stock check (only for OUT)
+  if (action === "OUT") {
+    for (const it of items) {
+      const variantId = mapBySku.get(it.externalSkuId)!;
+      const stock = await prisma.stock.findUnique({ where: { outletId_variantId: { outletId: outlet.id, variantId } } });
+      const current = stock?.qty ?? 0;
+      if (current - it.qty < 0) {
+        await prisma.webhookEvent.update({ where: { id: eventId }, data: { status: "ERROR", errorMessage: `Insufficient stock for ${it.externalSkuId}` } });
+        return { ok: false, message: "Insufficient stock" };
+      }
     }
   }
 
@@ -92,7 +117,7 @@ async function tryProcessEvent(eventId: string) {
   const order = await prisma.$transaction(async (tx) => {
     const created = await tx.order.upsert({
       where: { channel_externalOrderId: { channel: event.channel, externalOrderId: String(externalOrderId) } },
-      update: { totalAmount, source: "API", outletId: outlet.id },
+      update: { totalAmount, source: "API", outletId: outlet.id, status: mappedStatus },
       create: {
         orderCode: `API-${event.channel}-${String(externalOrderId).slice(-12)}`,
         channel: event.channel,
@@ -100,7 +125,7 @@ async function tryProcessEvent(eventId: string) {
         outletId: outlet.id,
         externalOrderId: String(externalOrderId),
         totalAmount,
-        status: "NEW",
+        status: mappedStatus,
       },
     });
 
@@ -108,25 +133,27 @@ async function tryProcessEvent(eventId: string) {
     await tx.orderItem.deleteMany({ where: { orderId: created.id } });
     await tx.orderItem.createMany({ data: orderItems.map((it) => ({ ...it, orderId: created.id })) });
 
-    // Adjust stock movements: for simplicity, we only apply if this event wasn't processed before
-    // If status already PROCESSED, skip.
-    if (event.status !== "PROCESSED") {
-      for (const it of orderItems) {
-        await tx.stock.update({ where: { outletId_variantId: { outletId: outlet.id, variantId: it.variantId } }, data: { qty: { decrement: it.qty } } });
-        await tx.stockMovement.create({
-          data: {
-            type: "OUT",
-            outletId: outlet.id,
-            variantId: it.variantId,
-            qty: it.qty,
-            note: `API ${event.channel} ${externalOrderId}`,
-            // Standardized StockMovement reference
-            refType: "STOCK_OUT",
-            refId: created.id,
-            createdAt: new Date(event.receivedAt),
-          },
-        });
-      }
+    // Idempotent stock apply (per action + variant)
+    const refType = action === "OUT" ? "STOCK_OUT" : "RETURN";
+    for (const it of orderItems) {
+      const exists = await tx.stockMovement.findFirst({ where: { refType, refId: created.id, variantId: it.variantId } });
+      if (exists) continue;
+      await tx.stock.update({
+        where: { outletId_variantId: { outletId: outlet.id, variantId: it.variantId } },
+        data: { qty: action === "OUT" ? { decrement: it.qty } : { increment: it.qty } },
+      });
+      await tx.stockMovement.create({
+        data: {
+          type: action === "OUT" ? "OUT" : "IN",
+          outletId: outlet.id,
+          variantId: it.variantId,
+          qty: it.qty,
+          note: `API ${event.channel} ${externalOrderId} (${mappedStatus})`,
+          refType,
+          refId: created.id,
+          createdAt: new Date(event.receivedAt),
+        },
+      });
     }
 
     return created;

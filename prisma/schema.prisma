@@ -44,10 +44,20 @@ enum OrderChannel {
   RESELLER
 }
 
+// Where the stock-out is going (operationally useful for manual sales/shipments)
+enum DestinationType {
+  CUSTOMER
+  RESELLER
+  MARKETPLACE
+  OTHER
+}
+
 enum PaymentMethod {
   CASH
+  COD
   TRANSFER
   QRIS
+  E_WALLET
 }
 
 enum OrderStatus {
@@ -56,6 +66,7 @@ enum OrderStatus {
   SHIPPED
   COMPLETED
   CANCELLED
+  RETURNED
 }
 
 enum OrderSource {
@@ -364,6 +375,8 @@ model Order {
   totalAmount        Int
   status             OrderStatus  @default(NEW)
   paymentMethod      PaymentMethod?
+  destinationType    DestinationType?
+  destinationName    String?
   customerName       String?
   note               String?
   createdAt          DateTime     @default(now())
@@ -378,6 +391,43 @@ model Order {
   @@index([marketplaceOrderId])
   @@unique([channel, externalOrderId])
   @@map("order")
+}
+
+// Persisted CSV imports so "needs mapping" rows can be fixed and re-submitted safely.
+model CsvImportBatch {
+  id        String       @id @default(cuid())
+  channel   OrderChannel
+  status    String       @default("DRAFT") // DRAFT | NEEDS_MAPPING | READY | IMPORTED | ERROR
+  note      String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  rows CsvImportRow[]
+
+  @@index([channel])
+  @@index([createdAt])
+  @@map("csvimportbatch")
+}
+
+model CsvImportRow {
+  id        String   @id @default(cuid())
+  batchId   String
+  externalOrderId String
+  externalSkuId   String
+  qty       Int
+  price     Int?
+  date      DateTime?
+  productName String?
+  sizeText   String?
+  status     String @default("PARSED") // PARSED | NEEDS_MAPPING | READY | IMPORTED | ERROR
+  errorMessage String?
+
+  batch CsvImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId])
+  @@index([externalOrderId])
+  @@index([externalSkuId])
+  @@map("csvimportrow")
 }
 
 model WebhookEvent {

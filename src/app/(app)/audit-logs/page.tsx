@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/client";
 
 import Pagination from "@/components/ui/Pagination";
+import EmptyState from "@/components/EmptyState";
 type AuditLog = {
   id: string;
   createdAt: string;
@@ -99,6 +100,9 @@ export default function AuditLogsPage() {
         </div>
       ) : null}
 
+      {!loading && items.length === 0 ? (
+        <EmptyState title="Belum ada audit log" description="Audit log akan muncul setelah ada aktivitas (input stok, penjualan, dll)." />
+      ) : (
       <div className="mt-4 overflow-auto rounded border border-gray-200 dark:border-gray-800">
         <table className="min-w-[1100px] w-full text-left text-sm text-dark dark:text-white/90">
           <thead className="bg-gray-50 text-gray-600 dark:bg-gray-900/40 dark:text-gray-300">
@@ -143,6 +147,7 @@ export default function AuditLogsPage() {
           </tbody>
         </table>
       </div>
+      )}
 
       <div className="mt-4 flex items-center justify-between text-sm">
         <div className="text-gray-500">
