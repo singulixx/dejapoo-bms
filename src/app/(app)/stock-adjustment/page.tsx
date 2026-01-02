@@ -32,8 +32,12 @@ export default function StockAdjustmentPage() {
           apiFetch("/api/products?pageSize=100&includeInactive=true"),
           apiFetch("/api/outlets?pageSize=100&includeInactive=true"),
         ]);
-        setProducts(pRes.items || []);
-        setOutlets(oRes.items || []);
+
+        const pJson = pRes.ok ? await pRes.json() : { items: [] };
+        const oJson = oRes.ok ? await oRes.json() : { items: [] };
+
+        setProducts(pJson.items || []);
+        setOutlets(oJson.items || []);
       } catch (e: any) {
         toast({ title: "Gagal load data", description: e?.message });
       } finally {
@@ -42,7 +46,7 @@ export default function StockAdjustmentPage() {
     })();
   }, [toast]);
 
-  const selectedProduct = useMemo(() => products.find((p) => p.id === productId), [products, productId]);
+const selectedProduct = useMemo(() => products.find((p) => p.id === productId), [products, productId]);
   const variantId = useMemo(() => {
     const v = selectedProduct?.variants?.find((x) => x.size === size);
     return v?.id || "";
