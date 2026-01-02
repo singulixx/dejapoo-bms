@@ -29,6 +29,8 @@ export default function IntegrationsPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [loadingMaps, setLoadingMaps] = useState(false);
+  const [unmappedSkus, setUnmappedSkus] = useState<any[]>([]);
+  const [loadingUnmapped, setLoadingUnmapped] = useState(false);
 
   // Mapping form
   const [externalSkuId, setExternalSkuId] = useState("");
@@ -56,6 +58,14 @@ export default function IntegrationsPage() {
     setLoadingMaps(false);
   }
 
+async function loadUnmapped() {
+  setLoadingUnmapped(true);
+  const res = await apiFetch(`/api/integrations/unmapped-skus?channel=${channel}&take=300`);
+  const j = res.ok ? await res.json() : { items: [] };
+  setUnmappedSkus(j.items || []);
+  setLoadingUnmapped(false);
+}
+
   useEffect(() => {
     loadProducts();
   }, []);
@@ -63,6 +73,7 @@ export default function IntegrationsPage() {
   useEffect(() => {
     loadEvents();
     loadMaps();
+    loadUnmapped();
   }, [channel]);
 
   const allVariants = useMemo(() => {
@@ -92,6 +103,7 @@ export default function IntegrationsPage() {
     setExternalSkuId("");
     setVariantId("");
     await loadMaps();
+    await loadUnmapped();
     // try reprocess unmapped events quickly
     await loadEvents();
     toast({ title: "Berhasil", description: "Mapping disimpan", variant: "success" });
@@ -106,6 +118,7 @@ export default function IntegrationsPage() {
       return;
     }
     await loadMaps();
+    await loadUnmapped();
     toast({ title: "Terhapus", description: "Mapping berhasil dihapus", variant: "success" });
   }
 
@@ -249,7 +262,65 @@ export default function IntegrationsPage() {
             </button>
           </div>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
+<div className="mt-4 rounded-2xl border border-stroke dark:border-white/10 bg-gray-2/40 dark:bg-black/20 p-3">
+  <div className="flex items-center justify-between">
+    <div>
+      <div className="text-sm font-semibold">SKU yang belum dimapping</div>
+      <div className="text-xs text-dark-5 dark:text-white/60">
+        Ambil dari webhook event yang status-nya <span className="font-mono">UNMAPPED</span>. Klik salah satu SKU untuk mengisi form otomatis.
+      </div>
+    </div>
+    <button
+      onClick={loadUnmapped}
+      className="rounded-xl bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary/90"
+    >
+      Refresh
+    </button>
+  </div>
+
+  {loadingUnmapped ? (
+    <div className="mt-2 text-sm text-dark-5 dark:text-white/60">Loading...</div>
+  ) : unmappedSkus.length === 0 ? (
+    <div className="mt-2 text-sm text-dark-5 dark:text-white/60">Tidak ada SKU yang belum dimapping.</div>
+  ) : (
+    <div className="mt-2 overflow-x-auto">
+      <table className="w-full text-xs text-dark dark:text-white/90">
+        <thead className="text-dark-5 dark:text-white/60">
+          <tr>
+            <th className="py-2 text-left">External SKU</th>
+            <th className="py-2 text-left">Terlihat</th>
+            <th className="py-2 text-left">Terakhir</th>
+            <th className="py-2 text-left">Contoh Order</th>
+            <th className="py-2 text-left">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {unmappedSkus.slice(0, 50).map((u) => (
+            <tr key={u.externalSkuId} className="border-t border-stroke dark:border-white/10">
+              <td className="py-2 font-mono">{u.externalSkuId}</td>
+              <td className="py-2">{u.count}x</td>
+              <td className="py-2 whitespace-nowrap">{new Date(u.lastSeenAt).toLocaleString()}</td>
+              <td className="py-2 font-mono">{u.sampleOrderId || "-"}</td>
+              <td className="py-2">
+                <button
+                  onClick={() => setExternalSkuId(String(u.externalSkuId))}
+                  className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary/90"
+                >
+                  Pakai
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {unmappedSkus.length > 50 ? (
+        <div className="mt-2 text-xs text-dark-5 dark:text-white/60">Menampilkan 50 dari {unmappedSkus.length} SKU.</div>
+      ) : null}
+    </div>
+  )}
+</div>
+
+<div className="mt-4 grid gap-3 md:grid-cols-3">
             <input
               className="rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/10 px-3 py-2 outline-none"
               value={externalSkuId}
