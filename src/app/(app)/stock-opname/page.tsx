@@ -56,12 +56,9 @@ export default function StockOpnamePage() {
           setStockMap({});
           return;
         }
-        const res = await apiFetch(
-          `/api/stocks?outletId=${encodeURIComponent(outletId)}&pageSize=200`
-        );
-        const json = res.ok ? await res.json() : { items: [] };
+        const res = await apiFetch(`/api/stocks?outletId=${encodeURIComponent(outletId)}&pageSize=200`);
         const m: Record<string, number> = {};
-        for (const s of json.items || []) m[s.variantId] = s.qty;
+        for (const s of res.items || []) m[s.variantId] = s.qty;
         setStockMap(m);
       } catch (e: any) {
         toast({ title: "Gagal load stok", description: e?.message });

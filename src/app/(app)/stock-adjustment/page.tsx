@@ -46,7 +46,7 @@ export default function StockAdjustmentPage() {
     })();
   }, [toast]);
 
-const selectedProduct = useMemo(() => products.find((p) => p.id === productId), [products, productId]);
+  const selectedProduct = useMemo(() => products.find((p) => p.id === productId), [products, productId]);
   const variantId = useMemo(() => {
     const v = selectedProduct?.variants?.find((x) => x.size === size);
     return v?.id || "";
