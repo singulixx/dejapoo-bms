@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { verifyWebhookSignature } from "@/lib/shopee";
 
 function sha256(input: string) {
   return crypto.createHash("sha256").update(input).digest("hex");
@@ -45,13 +46,25 @@ function normalizeItems(payload: any): Array<{ externalSkuId: string; qty: numbe
 }
 
 export async function POST(req: Request) {
+  // Auth options:
+  // 1) Simple shared secret (recommended for internal testing): set WEBHOOK_SECRET_SHOPEE and send header x-webhook-secret
+  // 2) Best-effort Shopee signature verification: header x-shopee-signature = HMAC-SHA256(rawBody, partner_key)
   const secret = process.env.WEBHOOK_SECRET_SHOPEE || "";
   const header = req.headers.get("x-webhook-secret") || "";
-  if (!secret || header !== secret) {
+
+  const rawBody = await req.text();
+  const sigHeader = req.headers.get("x-shopee-signature") || req.headers.get("X-Shopee-Signature");
+
+  const okBySecret = !!secret && header === secret;
+  const okBySig = verifyWebhookSignature(rawBody, sigHeader);
+
+  if (!okBySecret && !okBySig) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  const payload = await req.json().catch(() => null);
+  const payload = (() => {
+    try { return rawBody ? JSON.parse(rawBody) : null; } catch { return null; }
+  })();
   if (!payload) return NextResponse.json({ message: "Invalid JSON" }, { status: 400 });
 
   const raw = JSON.stringify(payload);

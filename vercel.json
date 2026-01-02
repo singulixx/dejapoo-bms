@@ -1,0 +1,20 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/refresh-token",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/shopee/orders",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/tiktok/orders",
+      "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/push-stock",
+      "schedule": "*/15 * * * *"
+    }
+  ]
+}

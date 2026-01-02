@@ -20,8 +20,21 @@ export default function IntegrationsPage() {
   const [origin, setOrigin] = useState<string>("");
   useEffect(() => {
     setOrigin(window.location.origin);
+    loadShopeeStatus();
   }, []);
   const [tab, setTab] = useState<"events" | "mapping">("events");
+
+  const [shopeeStatus, setShopeeStatus] = useState<any>(null);
+  const [testingShopee, setTestingShopee] = useState(false);
+  const loadShopeeStatus = async () => {
+    try {
+      const res = await apiFetch("/api/integrations/shopee/status");
+      const j = res.ok ? await res.json() : null;
+      setShopeeStatus(j);
+    } catch {
+      setShopeeStatus(null);
+    }
+  };
 
   // Data
   const [events, setEvents] = useState<any[]>([]);
@@ -182,14 +195,66 @@ async function loadUnmapped() {
               Pastikan env <span className="font-mono">SHOPEE_PARTNER_ID</span>, <span className="font-mono">SHOPEE_PARTNER_KEY</span>, dan <span className="font-mono">SHOPEE_REDIRECT_URL</span> sudah di-set.
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
+              
               <button
                 onClick={() => window.open(`/api/integrations/shopee/connect`, "_blank")}
                 className="rounded-xl bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary/90"
               >
                 Connect Shopee
               </button>
+
+              <button
+                onClick={async () => {
+                  setTestingShopee(true);
+                  try {
+                    const res = await apiFetch("/api/integrations/shopee/test");
+                    const j = res.ok ? await res.json() : await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                      toast({ title: "Tes koneksi gagal", description: j?.message || "Tidak bisa konek ke Shopee" });
+                    } else {
+                      toast({ title: "Tes koneksi berhasil", description: `shop_id: ${j?.shop_id ?? "-"}` });
+                    }
+                  } catch (e: any) {
+                    toast({ title: "Tes koneksi gagal", description: e?.message || "Error" });
+                  } finally {
+                    setTestingShopee(false);
+                    loadShopeeStatus();
+                  }
+                }}
+                disabled={testingShopee}
+                className="rounded-xl bg-primary/10 text-primary dark:bg-primary/20 border border-primary/30 px-3 py-2 text-sm font-medium hover:bg-primary/20 disabled:opacity-60"
+              >
+                {testingShopee ? "Testing..." : "Test Connection"}
+              </button>
+
+              <button
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: "Disconnect Shopee?",
+                    description: "Akun marketplace Shopee akan dinonaktifkan dari sistem.",
+                    confirmText: "Disconnect",
+                  });
+                  if (!ok) return;
+                  await apiFetch("/api/integrations/shopee/disconnect", { method: "POST" });
+                  toast({ title: "Shopee disconnected" });
+                  loadShopeeStatus();
+                }}
+                className="rounded-xl bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+              >
+                Disconnect
+              </button>
               <div className="text-xs text-dark-6 dark:text-white/40">
                 Akan membuka halaman otorisasi Shopee, lalu kembali ke aplikasi.
+              </div>
+              <div className="text-xs text-dark-6 dark:text-white/50">
+                Status:{" "}
+                {shopeeStatus?.connected ? (
+                  <span className="font-medium text-green-600 dark:text-green-400">
+                    Connected (shop_id: {shopeeStatus?.shop_id ?? "-"})
+                  </span>
+                ) : (
+                  <span className="font-medium text-dark-6 dark:text-white/60">Not connected</span>
+                )}
               </div>
             </div>
           </div>
