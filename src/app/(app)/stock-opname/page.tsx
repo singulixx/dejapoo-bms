@@ -118,112 +118,146 @@ export default function StockOpnamePage() {
     }
   }
 
-  if (loading) return <div className="p-6">Loading...</div>;
+  if (loading) return <div className="p-4 md:p-6">Loading...</div>;
 
   return (
-    <div className="p-6 space-y-4">
-      <h1 className="text-xl font-semibold">Stock Opname</h1>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        <label className="space-y-1">
-          <div className="text-sm">Outlet (opsional, default Gudang)</div>
-          <select className="w-full border rounded p-2" value={outletId} onChange={(e) => setOutletId(e.target.value)}>
-            <option value="">(Default Gudang)</option>
-            {outlets.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.name} ({o.type})
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="space-y-1">
-          <div className="text-sm">Catatan</div>
-          <input
-            className="w-full border rounded p-2"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="mis: opname akhir bulan"
-          />
-        </label>
+    <div className="space-y-6 p-4 md:p-6">
+      <div>
+        <h1 className="text-2xl font-semibold">Stock Opname</h1>
+        <div className="text-sm text-dark-5 dark:text-white/60">
+          Pencocokan stok fisik dengan stok sistem (biasanya opname berkala/akhir bulan).
+        </div>
       </div>
 
-      <div className="border rounded">
-        <div className="grid grid-cols-12 gap-2 p-2 text-sm font-semibold border-b">
-          <div className="col-span-5">Desain</div>
-          <div className="col-span-2">Size</div>
-          <div className="col-span-2">System</div>
-          <div className="col-span-2">Fisik</div>
-          <div className="col-span-1"></div>
+      <div className="rounded-2xl border border-stroke dark:border-white/20 bg-card dark:bg-card/5 p-4">
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="grid gap-1">
+            <div className="text-xs text-dark-6 dark:text-white/50">Outlet (opsional, default Gudang)</div>
+            <select
+              className="w-full rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 px-3 py-2 outline-none"
+              value={outletId}
+              onChange={(e) => setOutletId(e.target.value)}
+            >
+              <option value="">(Default Gudang)</option>
+              {outlets.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name} ({o.type})
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-1">
+            <div className="text-xs text-dark-6 dark:text-white/50">Catatan (opsional)</div>
+            <input
+              className="w-full rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 px-3 py-2 outline-none"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="mis: opname akhir bulan"
+            />
+          </label>
         </div>
 
-        {computed.map((r, idx) => (
-          <div key={idx} className="grid grid-cols-12 gap-2 p-2 border-b items-center">
-            <div className="col-span-5">
-              <select
-                className="w-full border rounded p-2"
-                value={r.productId}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, productId: v } : x)));
-                }}
-              >
-                <option value="">Pilih desain...</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full text-sm text-dark dark:text-white/90">
+            <thead className="text-dark-5 dark:text-white/60">
+              <tr>
+                <th className="py-2 text-left">Desain</th>
+                <th className="py-2 text-left">Ukuran</th>
+                <th className="py-2 text-left">System</th>
+                <th className="py-2 text-left">Fisik</th>
+                <th className="py-2 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {computed.map((r, idx) => (
+                <tr key={idx} className="border-t border-stroke dark:border-white/20">
+                  <td className="py-2">
+                    <select
+                      className="w-full rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 px-3 py-2 outline-none"
+                      value={r.productId}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, productId: v } : x)));
+                      }}
+                    >
+                      <option value="">-- Pilih desain --</option>
+                      {products.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
 
-            <div className="col-span-2">
-              <select
-                className="w-full border rounded p-2"
-                value={r.size}
-                onChange={(e) => {
-                  const v = e.target.value as Size;
-                  setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, size: v } : x)));
-                }}
-              >
-                {SIZES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
+                  <td className="py-2">
+                    <select
+                      className="w-full rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 px-3 py-2 outline-none"
+                      value={r.size}
+                      onChange={(e) => {
+                        const v = e.target.value as Size;
+                        setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, size: v } : x)));
+                      }}
+                    >
+                      {SIZES.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
 
-            <div className="col-span-2 text-sm">
-              {r.variantId ? r.systemQty : "-"}
-              {r.variantId ? <div className="text-xs opacity-60">diff: {r.diff >= 0 ? `+${r.diff}` : r.diff}</div> : null}
-            </div>
+                  <td className="py-2">
+                    {r.variantId ? r.systemQty : "-"}
+                    {r.variantId ? (
+                      <div className="text-xs text-dark-5 dark:text-white/60">
+                        diff: {r.diff >= 0 ? `+${r.diff}` : r.diff}
+                      </div>
+                    ) : null}
+                  </td>
 
-            <div className="col-span-2">
-              <NumberInput
-                value={r.countedQty}
-                onValueChange={(v) => setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, countedQty: v } : x)))}
-                placeholder="qty fisik"
-              />
-            </div>
+                  <td className="py-2">
+                    <NumberInput
+                      value={r.countedQty}
+                      onValueChange={(v) =>
+                        setRows((prev) => prev.map((x, i) => (i === idx ? { ...x, countedQty: v } : x)))
+                      }
+                      placeholder="qty fisik"
+                      className="w-28 rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 px-3 py-2 outline-none"
+                    />
+                  </td>
 
-            <div className="col-span-1">
-              <button className="text-red-600 text-sm" onClick={() => removeRow(idx)}>
-                Hapus
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+                  <td className="py-2 text-right">
+                    <button
+                      className="rounded-xl bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary/90"
+                      onClick={() => removeRow(idx)}
+                      disabled={computed.length <= 1}
+                    >
+                      Hapus
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      <div className="flex gap-2">
-        <button className="border rounded px-4 py-2" onClick={addRow}>
-          + Tambah Baris
-        </button>
+        <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <button
+            className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
+            onClick={addRow}
+          >
+            + Tambah Baris
+          </button>
 
-        <button className="bg-black text-white rounded px-4 py-2 disabled:opacity-50" onClick={submit} disabled={submitting}>
-          {submitting ? "Menyimpan..." : "Submit Opname"}
-        </button>
+          <button
+            className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:bg-gray-2 disabled:text-dark-5 disabled:hover:bg-gray-2 disabled:opacity-100 dark:disabled:bg-black/40 dark:disabled:text-dark-6"
+            onClick={submit}
+            disabled={submitting}
+          >
+            {submitting ? "Menyimpan..." : "Submit Opname"}
+          </button>
+        </div>
       </div>
     </div>
   );

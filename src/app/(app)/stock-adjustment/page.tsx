@@ -79,67 +79,97 @@ export default function StockAdjustmentPage() {
     }
   }
 
-  if (loading) return <div className="p-6">Loading...</div>;
+  if (loading) return <div className="p-4 md:p-6">Loading...</div>;
 
   return (
-    <div className="p-6 space-y-4">
-      <h1 className="text-xl font-semibold">Stock Adjustment</h1>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        <label className="space-y-1">
-          <div className="text-sm">Outlet (opsional, default Gudang)</div>
-          <select className="w-full border rounded p-2" value={outletId} onChange={(e) => setOutletId(e.target.value)}>
-            <option value="">(Default Gudang)</option>
-            {outlets.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.name} ({o.type})
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="space-y-1">
-          <div className="text-sm">Desain</div>
-          <select className="w-full border rounded p-2" value={productId} onChange={(e) => setProductId(e.target.value)}>
-            <option value="">Pilih desain...</option>
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="space-y-1">
-          <div className="text-sm">Size</div>
-          <select className="w-full border rounded p-2" value={size} onChange={(e) => setSize(e.target.value as Size)}>
-            {SIZES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="space-y-1">
-          <div className="text-sm">Delta Qty (+ / -)</div>
-          <NumberInput value={deltaQty} onValueChange={setDeltaQty} placeholder="contoh: -2 atau 5" />
-        </label>
-
-        <label className="space-y-1 md:col-span-2">
-          <div className="text-sm">Alasan (wajib)</div>
-          <input
-            className="w-full border rounded p-2"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="mis: rusak, hilang, salah input"
-          />
-        </label>
+    <div className="space-y-6 p-4 md:p-6">
+      <div>
+        <h1 className="text-2xl font-semibold">Stock Adjustment</h1>
+        <div className="text-sm text-dark-5 dark:text-white/60">
+          Koreksi stok cepat (tambah/kurang) untuk kasus seperti rusak, hilang, atau salah input.
+        </div>
       </div>
 
-      <button className="bg-black text-white rounded px-4 py-2 disabled:opacity-50" onClick={submit} disabled={submitting}>
-        {submitting ? "Menyimpan..." : "Simpan Adjustment"}
-      </button>
+      <div className="rounded-2xl border border-stroke dark:border-white/20 bg-card dark:bg-card/5 p-4">
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="grid gap-1">
+            <div className="text-xs text-dark-6 dark:text-white/50">Outlet (opsional, default Gudang)</div>
+            <select
+              className="w-full rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 px-3 py-2 outline-none"
+              value={outletId}
+              onChange={(e) => setOutletId(e.target.value)}
+            >
+              <option value="">(Default Gudang)</option>
+              {outlets.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name} ({o.type})
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-1">
+            <div className="text-xs text-dark-6 dark:text-white/50">Desain</div>
+            <select
+              className="w-full rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 px-3 py-2 outline-none"
+              value={productId}
+              onChange={(e) => setProductId(e.target.value)}
+            >
+              <option value="">Pilih desain...</option>
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-1">
+            <div className="text-xs text-dark-6 dark:text-white/50">Size</div>
+            <select
+              className="w-full rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 px-3 py-2 outline-none"
+              value={size}
+              onChange={(e) => setSize(e.target.value as Size)}
+            >
+              {SIZES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-1">
+            <div className="text-xs text-dark-6 dark:text-white/50">Delta Qty (+ / -)</div>
+            <NumberInput
+              value={deltaQty}
+              onValueChange={setDeltaQty}
+              placeholder="contoh: -2 atau 5"
+              className="w-full rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 px-3 py-2 outline-none"
+            />
+          </label>
+
+          <label className="grid gap-1 md:col-span-2">
+            <div className="text-xs text-dark-6 dark:text-white/50">Alasan (wajib)</div>
+            <input
+              className="w-full rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 px-3 py-2 outline-none"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="mis: rusak, hilang, salah input"
+            />
+          </label>
+        </div>
+
+        <div className="mt-4 flex items-center justify-end">
+          <button
+            className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:bg-gray-2 disabled:text-dark-5 disabled:hover:bg-gray-2 disabled:opacity-100 dark:disabled:bg-black/40 dark:disabled:text-dark-6"
+            onClick={submit}
+            disabled={submitting}
+          >
+            {submitting ? "Menyimpan..." : "Simpan Adjustment"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
