@@ -292,7 +292,11 @@ export default function OutletsPage() {
           </div>
 
           {items.length === 0 && !loading ? (
-            <EmptyState title="Belum ada outlet" description="Tambahkan outlet/gudang agar stok bisa disimpan per lokasi." />
+            <EmptyState
+              title="Belum ada outlet"
+              description="Tambahkan outlet/gudang agar stok bisa disimpan per lokasi."
+              illustration="/empty/empty-outlets.svg"
+            />
           ) : (
             <div className="overflow-x-auto">
             <table className="w-full text-sm text-dark dark:text-white/90">

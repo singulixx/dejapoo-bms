@@ -239,7 +239,11 @@ export default function UsersPage() {
         </div>
 
         {staff.length === 0 && !loadingList ? (
-          <EmptyState title="Belum ada akun staff" description="Tambahkan akun staff jika kamu ingin tim ikut input stok/penjualan." />
+          <EmptyState
+            title="Belum ada akun staff"
+            description="Tambahkan akun staff jika kamu ingin tim ikut input stok/penjualan."
+            illustration="/empty/empty-users.svg"
+          />
         ) : (
           <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">

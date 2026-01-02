@@ -177,7 +177,11 @@ export default function StocksPage() {
         {loading ? <div className="text-dark-5 dark:text-white/60">Loading...</div> : null}
 
         {items.length === 0 && !loading ? (
-          <EmptyState title="Belum ada data stok" description="Belum ada stok yang tercatat. Pastikan kamu sudah membuat varian dan input barang masuk." />
+          <EmptyState
+            title="Belum ada data stok"
+            description="Belum ada stok yang tercatat. Pastikan kamu sudah membuat varian dan input barang masuk."
+            illustration="/empty/empty-stocks.svg"
+          />
         ) : (
           <div className="overflow-x-auto">
           <table className="w-full text-sm text-dark dark:text-white/90">

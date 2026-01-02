@@ -91,6 +91,7 @@ export default function ReportsPage() {
           <EmptyState
             title="Belum ada data laporan"
             description="Laporan akan muncul setelah ada transaksi penjualan."
+            illustration="/empty/empty-reports.svg"
           />
         ) : null}
 
@@ -102,6 +103,7 @@ export default function ReportsPage() {
                 <EmptyState
                   title="Belum ada data penjualan per channel"
                   description="Transaksi akan muncul setelah kamu input penjualan (POS / Stock Out / CSV)."
+                  illustration="/empty/empty-reports.svg"
                   className="py-8"
                 />
               ) : (
@@ -132,6 +134,7 @@ export default function ReportsPage() {
                 <EmptyState
                   title="Belum ada data produk terjual"
                   description="Setelah ada transaksi, daftar produk terlaris akan muncul di sini."
+                  illustration="/empty/empty-reports.svg"
                   className="py-8"
                 />
               ) : (

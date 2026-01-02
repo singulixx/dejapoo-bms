@@ -420,7 +420,11 @@ export default function VariantsPage() {
         {loading ? <div className="text-dark-5 dark:text-white/60">Loading...</div> : null}
 
         {items.length === 0 && !loading ? (
-          <EmptyState title="Belum ada varian" description="Buat varian ukuran untuk setiap desain agar stok bisa dicatat." />
+          <EmptyState
+            title="Belum ada varian"
+            description="Buat varian ukuran untuk setiap desain agar stok bisa dicatat."
+            illustration="/empty/empty-variants.svg"
+          />
         ) : (
           <div className="overflow-x-auto">
           <table className="w-full text-sm text-dark dark:text-white/90">

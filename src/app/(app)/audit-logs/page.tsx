@@ -101,7 +101,11 @@ export default function AuditLogsPage() {
       ) : null}
 
       {!loading && items.length === 0 ? (
-        <EmptyState title="Belum ada audit log" description="Audit log akan muncul setelah ada aktivitas (input stok, penjualan, dll)." />
+        <EmptyState
+          title="Belum ada audit log"
+          description="Audit log akan muncul setelah ada aktivitas (input stok, penjualan, dll)."
+          illustration="/empty/empty-audit.svg"
+        />
       ) : (
       <div className="mt-4 overflow-auto rounded border border-gray-200 dark:border-gray-800">
         <table className="min-w-[1100px] w-full text-left text-sm text-dark dark:text-white/90">

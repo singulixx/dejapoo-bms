@@ -186,7 +186,11 @@ export default function OrdersPage() {
               </table>
             </div>
           ) : (
-            <EmptyState title="Belum ada transaksi" description="Transaksi akan muncul setelah kamu input penjualan (POS/Stock Out/CSV)." />
+            <EmptyState
+              title="Belum ada transaksi"
+              description="Transaksi akan muncul setelah kamu input penjualan (POS/Stock Out/CSV)."
+              illustration="/empty/empty-orders.svg"
+            />
           )
         ) : null}
 

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { apiFetch } from "@/lib/client";
 import { useNotify } from "@/components/ui/notify";
+import EmptyState from "@/components/EmptyState";
 
 type Channel = "SHOPEE" | "TIKTOK";
 
@@ -216,6 +217,14 @@ export default function CsvImportPage() {
           </a>
         </div>
       </div>
+
+      {!csvText.trim() && !preview ? (
+        <EmptyState
+          title="Belum ada file CSV"
+          description="Upload file CSV order (Shopee/TikTok) untuk mulai import. Kamu bisa pakai template CSV marketplace atau hasil export dari seller center."
+          illustration="/empty/empty-upload.svg"
+        />
+      ) : null}
 
       {preview ? (
         <div className="rounded-2xl border border-stroke dark:border-white/10 bg-card dark:bg-card/5 p-4 space-y-3">

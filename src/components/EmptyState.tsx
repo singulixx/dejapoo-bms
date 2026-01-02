@@ -3,6 +3,8 @@ import Image from "next/image";
 type EmptyStateProps = {
   title?: string;
   description?: string;
+  /** Path to an illustration in /public (e.g. "/empty/empty-products.svg") */
+  illustration?: string;
   /** Optional: text for a primary action button */
   actionLabel?: string;
   onAction?: () => void;
@@ -12,6 +14,7 @@ type EmptyStateProps = {
 export default function EmptyState({
   title = "Belum ada data",
   description = "Data akan muncul setelah kamu menambahkan item baru.",
+  illustration = "/empty/empty-generic.svg",
   actionLabel,
   onAction,
   className,
@@ -25,7 +28,7 @@ export default function EmptyState({
     >
       <div className="relative h-28 w-28">
         <Image
-          src="/empty-state.svg"
+          src={illustration}
           alt="Empty state"
           fill
           sizes="112px"

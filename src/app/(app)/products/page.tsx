@@ -376,7 +376,11 @@ export default function ProductsPage() {
         {loading ? <div className="text-dark-5 dark:text-white/60">Loading...</div> : null}
         {err ? <div className="text-red-400">{err}</div> : null}
         {filtered.length === 0 && !loading ? (
-          <EmptyState title="Belum ada desain" description="Tambahkan desain pertama kamu di form di atas." />
+          <EmptyState
+            title="Belum ada desain"
+            description="Tambahkan desain pertama kamu di form di atas."
+            illustration="/empty/empty-products.svg"
+          />
         ) : (
           <div className="overflow-x-auto">
           <table className="w-full text-sm text-dark dark:text-white/90">
