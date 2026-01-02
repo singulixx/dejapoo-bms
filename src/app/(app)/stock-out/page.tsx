@@ -6,7 +6,7 @@ import NumberInput from "@/components/FormElements/NumberInput";
 import { useNotify } from "@/components/ui/notify";
 
 type Size = "S" | "M" | "L" | "XL" | "XXL";
-type Channel = "SHOPEE" | "TIKTOK";
+type Channel = "SHOPEE" | "TIKTOK" | "OFFLINE_STORE" | "RESELLER";
 
 type Variant = { id: string; size: Size; sku: string; price: number; isActive: boolean };
 type Product = { id: string; name: string; category: string; sellPrice: number; isActive: boolean; variants: Variant[] };
@@ -23,6 +23,7 @@ export default function StockOutPage() {
 
   const [channel, setChannel] = useState<Channel>("SHOPEE");
   const [date, setDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [destination, setDestination] = useState<string>("");
   const [note, setNote] = useState<string>("");
 
   // qty default 0 supaya placeholder muncul
@@ -98,6 +99,7 @@ export default function StockOutPage() {
           method: "POST",
           body: JSON.stringify({
             channel,
+            customerName: destination || undefined,
             note: note || undefined,
             date: isoDate,
             items: items.map((it) => ({ productId: it.productId, variantId: it.variantId!, qty: it.qty })),
@@ -112,6 +114,7 @@ export default function StockOutPage() {
 
       toast({ title: "Berhasil", description: "Barang keluar tersimpan", variant: "success" });
       setRows([{ productId: "", size: "S", qty: 0 }]);
+      setDestination("");
       setNote("");
     } finally {
       setSubmitting(false);
@@ -123,12 +126,12 @@ export default function StockOutPage() {
       <div>
         <h1 className="text-2xl font-semibold">Barang Keluar</h1>
         <div className="text-sm text-dark-5 dark:text-white/60">
-          Input barang keluar untuk marketplace (Shopee / TikTok). Penjualan offline dicatat lewat POS. Stok otomatis berkurang (tidak boleh minus).
+          Input barang keluar (marketplace / offline / reseller). Stok otomatis berkurang (tidak boleh minus).
         </div>
       </div>
 
       <div className="rounded-2xl border border-stroke dark:border-white/20 bg-card dark:bg-card/5 p-4">
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-4">
           <div className="grid gap-1">
             <div className="text-xs text-dark-6 dark:text-white/50">Channel Penjualan</div>
             <select
@@ -137,7 +140,20 @@ export default function StockOutPage() {
               className="rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 text-dark dark:text-white px-3 py-2 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             >
               <option value="SHOPEE">Shopee</option>
-              <option value="TIKTOK">TikTok Shop</option></select>
+              <option value="TIKTOK">TikTok Shop</option>
+              <option value="OFFLINE_STORE">Toko Offline</option>
+              <option value="RESELLER">Reseller</option>
+            </select>
+          </div>
+
+          <div className="grid gap-1">
+            <div className="text-xs text-dark-6 dark:text-white/50">Tujuan (opsional)</div>
+            <input
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+              placeholder="Mis. Nama pembeli / reseller"
+              className="rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 text-dark dark:text-white px-3 py-2 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            />
           </div>
 
           <div className="grid gap-1">
@@ -156,7 +172,7 @@ export default function StockOutPage() {
             <input
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Mis. Shopee order #A123"
+              placeholder="Mis. nomor pesanan / keterangan"
               className="rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 text-dark dark:text-white px-3 py-2 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </div>

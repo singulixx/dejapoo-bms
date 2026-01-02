@@ -5,6 +5,8 @@ import { requireAdmin } from "@/lib/auth";
 
 const BodySchema = z.object({
   outletId: z.string().min(1).optional(),
+  // PO number disimpan di note (non-breaking, tidak perlu migrasi DB)
+  poNumber: z.string().optional(),
   supplier: z.string().optional(),
   date: z.string().datetime().optional(),
   note: z.string().optional(),
@@ -27,7 +29,11 @@ export async function POST(req: Request) {
 const parsed = BodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-  const { items, supplier, note } = parsed.data;
+  const { items, supplier } = parsed.data;
+  // Simpan PO number sebagai prefix note agar aman tanpa perubahan schema
+  const note = [parsed.data.poNumber ? `PO: ${parsed.data.poNumber}` : null, parsed.data.note || null]
+    .filter(Boolean)
+    .join(" | ") || undefined;
 const date = parsed.data.date ? new Date(parsed.data.date) : new Date();
 
 // MVP: single outlet (Gudang). If not provided, auto-pick/create WAREHOUSE outlet.

@@ -21,6 +21,7 @@ export default function StockInPage() {
   const [err, setErr] = useState<string | null>(null);
 
   const [date, setDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [poNumber, setPoNumber] = useState<string>("");
   const [note, setNote] = useState<string>("");
   const [supplier, setSupplier] = useState<string>("");
 
@@ -81,6 +82,7 @@ export default function StockInPage() {
       const res = await apiFetch("/api/stock/in", {
         method: "POST",
         body: JSON.stringify({
+          poNumber: poNumber || undefined,
           supplier: supplier || undefined,
           note: note || undefined,
           date: new Date(`${date}T00:00:00.000Z`).toISOString(),
@@ -98,6 +100,7 @@ export default function StockInPage() {
       toast({ title: "Berhasil", description: "Stok masuk tersimpan", variant: "success" });
       setRows([{ productId: "", size: "S", qty: 0 }]);
       setSupplier("");
+      setPoNumber("");
       setNote("");
     } finally {
       setSubmitting(false);
@@ -135,13 +138,26 @@ export default function StockInPage() {
           </div>
 
           <div className="grid gap-1 md:col-span-1">
-            <div className="text-xs text-dark-6 dark:text-white/50">Catatan (opsional)</div>
-            <input
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Mis. PO konveksi #123"
-              className="rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 px-3 py-2 outline-none"
-            />
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-1">
+                <div className="text-xs text-dark-6 dark:text-white/50">Nomor PO (opsional)</div>
+                <input
+                  value={poNumber}
+                  onChange={(e) => setPoNumber(e.target.value)}
+                  placeholder="Mis. PO-2026-001"
+                  className="rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 px-3 py-2 outline-none"
+                />
+              </div>
+              <div className="grid gap-1">
+                <div className="text-xs text-dark-6 dark:text-white/50">Catatan (opsional)</div>
+                <input
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Mis. barang tambahan / revisi"
+                  className="rounded-xl bg-gray-2 dark:bg-black/40 border border-stroke dark:border-white/20 px-3 py-2 outline-none"
+                />
+              </div>
+            </div>
           </div>
         </div>
 

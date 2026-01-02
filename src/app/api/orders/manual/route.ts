@@ -6,10 +6,12 @@ import { createAndEmitNotification } from "@/lib/notifications";
 
 const BodySchema = z.object({
   outletId: z.string().min(1).optional(),
-  channel: z.enum(["SHOPEE", "TIKTOK"]),
+  // Channel order manual (dipakai juga untuk Barang Keluar general)
+  channel: z.enum(["SHOPEE", "TIKTOK", "OFFLINE_STORE", "RESELLER"]),
   date: z.string().datetime().optional(),
   note: z.string().optional(),
   marketplaceOrderId: z.string().optional(),
+  customerName: z.string().optional(),
   items: z.array(
     z.object({
       productId: z.string().min(1),
@@ -48,7 +50,7 @@ export async function POST(req: Request) {
     }
   }
 
-  const { channel, note, marketplaceOrderId } = parsed.data;
+  const { channel, note, marketplaceOrderId, customerName } = parsed.data;
   const date = parsed.data.date ? new Date(parsed.data.date) : new Date();
 
   const normalizedItems = parsed.data.items.map((it) => ({
@@ -107,7 +109,7 @@ export async function POST(req: Request) {
         totalAmount,
         status: "NEW",
         paymentMethod: null,
-        customerName: null,
+        customerName: customerName ?? null,
         note: note ?? null,
         createdAt: date,
         items: {
